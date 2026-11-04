@@ -1,0 +1,32 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { mkdir, mkdtemp, writeFile, rm, symlink } from 'node:fs/promises';
+import path from 'node:path';
+import os from 'node:os';
+import { listDirectory, selectedFile, localAsset, readLimited } from '../dist/src/library.js';
+
+test('library returns relative Markdown IDs and folders without exposing escaped links', async t => {
+  const base = await mkdtemp(path.join(os.tmpdir(), 'kindle-library-'));
+  t.after(() => rm(base, { recursive: true, force: true, maxRetries: 5 }));
+  const root = path.join(base, 'cloud'); await mkdir(root);
+  await mkdir(path.join(root, 'subfolder'));
+  await writeFile(path.join(root, 'space notes.md'), '# Notes');
+  await writeFile(path.join(root, 'photo.png'), 'not a document');
+  const outside = path.join(base, 'outside'); await mkdir(outside);
+  await writeFile(path.join(outside, 'secret.md'), '# Private');
+  await symlink(outside, path.join(root, 'escape'), process.platform === 'win32' ? 'junction' : 'dir');
+  const alias = path.join(base, 'sync-root');
+  await symlink(root, alias, process.platform === 'win32' ? 'junction' : 'dir');
+  const listing = await listDirectory(alias, '');
+  assert.deepEqual(listing.entries.map(entry => [entry.id, entry.kind]), [['subfolder', 'directory'], ['space notes.md', 'document']]);
+  assert.equal(JSON.stringify(listing).includes(base), false);
+  await assert.rejects(selectedFile(root, '../outside/secret.md'), /outside|escapes/i);
+  await assert.rejects(selectedFile(root, 'escape/secret.md'), /outside|escapes/i);
+  await assert.rejects(selectedFile(root, 'photo.png'), /Markdown/);
+  assert.equal(await selectedFile(root, 'space notes.md'), path.join(root, 'space notes.md'));
+  await writeFile(path.join(root, 'subfolder', 'asset.png'), 'PNG');
+  assert.equal(await localAsset(root, path.join(root, 'space notes.md'), 'subfolder/asset.png'), path.join(root, 'subfolder', 'asset.png'));
+  await assert.rejects(localAsset(root, path.join(root, 'space notes.md'), 'https://example.com/image.png'), /local|remote/i);
+  await assert.rejects(localAsset(root, path.join(root, 'space notes.md'), '../outside/secret.md'), /outside|escapes/i);
+  await assert.rejects(readLimited(path.join(root, 'space notes.md'), 3), /limit|large/i);
+});

@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>Kindle Markdown Publisher</title>
+  <link rel="stylesheet" href="/style.css">
+  <script type="module" src="/app.js"></script>
+</head>
+<body>
+  <header class="page-header">
+    <div class="brand"><span class="brand-mark" aria-hidden="true">K</span><div><span class="eyebrow">LOCAL PUBLISHER</span><h1>Kindle Markdown</h1></div></div>
+    <button id="logout" class="quiet" hidden>Sign out</button>
+  </header>
+  <main>
+    <section id="login-panel" class="panel login-panel">
+      <span class="eyebrow">YOUR DOCUMENTS, ON YOUR SCRIBE</span>
+      <h2>Open your local library</h2>
+      <p>Choose Markdown files, render diagrams, and make a reading copy for your Kindle.</p>
+      <form id="login-form">
+        <label for="token">Access token</label>
+        <input id="token" type="password" autocomplete="current-password" spellcheck="false" required>
+        <button id="login-button" class="primary" type="submit">Open library</button>
+      </form>
+      <p class="small">On the host laptop, use <code>start.ps1 -Open</code> or find your token in <code>.state/access-token</code>. Keep it private.</p>
+    </section>
+    <div id="notice" class="notice" role="status" aria-live="polite" hidden></div>
+    <div id="workspace" class="workspace" hidden>
+      <section id="library-panel" class="panel" hidden>
+        <div class="panel-heading"><div><span class="eyebrow">01 / SELECT</span><h2>Your documents</h2></div><button id="refresh" class="quiet">Refresh</button></div>
+        <p id="source-label" class="muted"></p>
+        <nav id="breadcrumbs" class="breadcrumbs" aria-label="Folder path"></nav>
+        <label class="sr-only" for="filter">Filter filenames in this folder</label>
+        <input id="filter" type="search" placeholder="Filter filenames in this folder" autocomplete="off">
+        <div id="file-list" class="file-list" aria-live="polite"></div>
+        <div id="selection" class="selection"><span id="selection-count">No files selected</span><button id="clear-selection" class="text-button" hidden>Clear</button></div>
+        <p id="selected-names" class="small selected-names"></p>
+        <div class="publish-bar">
+          <label for="format">Reading format<select id="format"><option value="epub">EPUB · adjustable text</option><option value="pdf">PDF · fixed pages</option></select></label>
+          <button id="publish" class="primary" disabled>Convert selected</button>
+        </div>
+        <p class="small format-note">EPUB is best for reading. PDF preserves layouts and supports pen markup after Send to Kindle import.</p>
+      </section>
+      <section id="jobs-panel" class="panel">
+        <div class="panel-heading"><div><span class="eyebrow">02 / READ &amp; SEND</span><h2>Published copies</h2></div><span id="connection" class="badge connected">Local</span></div>
+        <p id="email-note" class="small"></p>
+        <div id="job-list" class="job-list" aria-live="polite"><p class="empty">Your converted documents will appear here.</p></div>
+      </section>
+    </div>
+    <p id="privacy-note" class="privacy" hidden>Original files stay unchanged. Conversion happens on this laptop. Sending to Kindle uses Amazon's document service.</p>
+  </main>
+  <dialog id="preview-dialog">
+    <div class="preview-heading"><h2 id="preview-title">Document preview</h2><button id="close-preview" class="quiet">Close</button></div>
+    <iframe id="preview-frame" title="Rendered document preview" sandbox=""></iframe>
+  </dialog>
+</body>
+</html>

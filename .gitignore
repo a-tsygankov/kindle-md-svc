@@ -1,0 +1,11 @@
+.tools/
+.state/
+.host-operation.lock
+node_modules/
+output/
+tmp/
+.env
+config.local.json
+config.local.json.*.tmp
+*.log
+dist/

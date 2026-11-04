@@ -1,0 +1,19 @@
+{
+  "schemaVersion": 1,
+  "sourceDir": "",
+  "pandocPath": "",
+  "browserPath": "",
+  "listenHost": "127.0.0.1",
+  "port": 8787,
+  "smtp": {
+    "enabled": false,
+    "host": "",
+    "port": 587,
+    "security": "starttls",
+    "from": "",
+    "to": "",
+    "user": "",
+    "passwordEnv": "KINDLE_SMTP_PASSWORD",
+    "maxAttachmentBytes": 20971520
+  }
+}

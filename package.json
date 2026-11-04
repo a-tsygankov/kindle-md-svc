@@ -1,0 +1,31 @@
+{
+  "name": "kindle-md-svc",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Local Markdown and Mermaid publisher for Kindle Scribe",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "build": "node scripts/host.mjs build",
+    "proof": "node scripts/host.mjs proof",
+    "test": "node scripts/host.mjs test",
+    "configure": "node scripts/host.mjs configure",
+    "doctor": "node scripts/host.mjs doctor",
+    "start": "node scripts/host.mjs start",
+    "status": "node scripts/host.mjs status",
+    "stop": "node scripts/host.mjs stop",
+    "reset": "node scripts/host.mjs reset"
+  },
+  "dependencies": {
+    "@mermaid-js/mermaid-cli": "12.2.0",
+    "nodemailer": "10.3.1",
+    "puppeteer": "25.16.0"
+  },
+  "devDependencies": {
+    "@types/node": "26.6.6",
+    "@types/nodemailer": "8.0.2",
+    "typescript": "7.0.2"
+  }
+}
