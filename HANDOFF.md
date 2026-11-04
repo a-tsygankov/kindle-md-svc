@@ -94,8 +94,9 @@ acceptance device delivery. Wide/tall diagrams may require zooming.
 ## Source state and retained scratch
 
 The user requested repository integration. Local `main` is initialized from the
-verified initial implementation commit; no separate merge commit is needed for
-an empty repository. Nothing was pushed. Use `git log -1` for the current commit.
+verified initial implementation commit `6d33437`; no separate merge commit is
+needed for an empty repository. All 38 tests passed again on local main. Nothing
+was pushed. Use `git log -1` for the latest documentation/integration commit.
 Do not push without authorization. The empty remote does not yet reproduce the
 implementation; transfer local committed source or publish it first.
 

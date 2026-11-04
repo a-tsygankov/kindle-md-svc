@@ -166,3 +166,9 @@ failures, and next steps. Do not put secrets or private document contents here.
 - Integration is local only. No push, force update, scratch deletion, or private
   document conversion is part of this operation. Current commit is available via
   `git log -1`; service is restored after merged-tree verification.
+- Initial source commit: `6d33437` (`feat: add local Markdown publishing service
+  for Kindle Scribe`). Initialized local `main` at that commit and verified the
+  integrated tree: **38/38 tests passed**, no failures/skips. Documentation records
+  the integration, and the fully integrated temporary feature branch is removed.
+- The empty remote has no main ref, so its stale local upstream association is
+  cleared until an explicit publish. Local config/token/source remain excluded.
