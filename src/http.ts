@@ -8,6 +8,7 @@ import { randomBytes, randomUUID, createHash, timingSafeEqual } from 'node:crypt
 import { getConfig } from './config.js';
 import { listDirectory } from './library.js';
 import { JobQueue } from './jobs.js';
+import { DeviceSessions, SESSION_SECONDS } from './sessions.js';
 import { startPaths, readJson, isAlive } from '../scripts/host-lib.mjs';
 
 class HttpError extends Error { constructor(readonly status: number, message: string) { super(message); } }
@@ -50,7 +51,6 @@ export async function createPublisher(repo: string) {
   await lock.writeFile(JSON.stringify({ pid: process.pid, instance })); await lock.close();
   const tokenFile = path.join(stateDir, 'access-token');
   let queue: JobQueue | undefined;
-  const sessions = new Map<string, number>();
   let server: http.Server | undefined;
   try {
     let token: string;
@@ -62,18 +62,21 @@ export async function createPublisher(repo: string) {
       if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
       token = randomBytes(32).toString('base64url'); await writeFile(tokenFile, token + '\n', { flag: 'wx', mode: 0o600 });
     }
+    const sessions = await DeviceSessions.open(path.join(stateDir, 'device-sessions.json'), token);
     queue = await JobQueue.open(repo, config);
     const jobs = queue;
     const publicDir = fileURLToPath(new URL('../../public/', import.meta.url));
     const uiScript = fileURLToPath(new URL('./ui.js', import.meta.url));
     const equalToken = (value: unknown) => typeof value === 'string' && value.length <= 512 && timingSafeEqual(digest(value), digest(token));
-    function authenticated(req: IncomingMessage): boolean {
+    const browserCredential = (req: IncomingMessage) => /(?:^|;\s*)kindle_session=([A-Za-z0-9_-]+)/.exec(req.headers.cookie || '')?.[1];
+    const sessionCookie = (session: string) => `kindle_session=${session}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${SESSION_SECONDS}`;
+    async function authenticated(req: IncomingMessage, res: ServerResponse): Promise<boolean> {
       if (req.headers.authorization?.startsWith('Bearer ') && equalToken(req.headers.authorization.slice(7))) return true;
-      const cookie = /(?:^|;\s*)kindle_session=([A-Za-z0-9_-]+)/.exec(req.headers.cookie || '')?.[1];
+      const cookie = browserCredential(req);
       if (!cookie) return false;
-      const expires = sessions.get(cookie) || 0;
-      if (expires < Date.now()) { sessions.delete(cookie); return false; }
-      return true;
+      const result = await sessions.authenticate(cookie);
+      if (result.renew) res.setHeader('Set-Cookie', sessionCookie(cookie));
+      return result.valid;
     }
     server = http.createServer((req, res) => {
       res.setHeader('Cache-Control', 'no-store'); res.setHeader('X-Content-Type-Options', 'nosniff');
@@ -101,18 +104,16 @@ export async function createPublisher(repo: string) {
         if (req.method === 'POST' && url.pathname === '/api/session') {
           const input = await body(req);
           if (!equalToken(input.token)) throw new HttpError(401, 'Access token not accepted.');
-          for (const [key, expires] of sessions) if (expires < Date.now()) sessions.delete(key);
-          if (sessions.size >= 200) throw new HttpError(429, 'Too many sessions. Restart the service to clear them.');
-          const session = randomBytes(32).toString('base64url'); sessions.set(session, Date.now() + 24 * 60 * 60 * 1000);
-          res.setHeader('Set-Cookie', `kindle_session=${session}; Path=/; HttpOnly; SameSite=Strict; Max-Age=86400`);
+          const session = await sessions.issue(browserCredential(req));
+          res.setHeader('Set-Cookie', sessionCookie(session));
           json(res, 200, { ok: true }); return;
         }
         if (!url.pathname.startsWith('/api/')) throw new HttpError(404, 'Not found.');
-        if (!authenticated(req)) throw new HttpError(401, 'Sign in to your local library.');
+        if (!await authenticated(req, res)) throw new HttpError(401, 'Sign in to your local library.');
         if (req.method === 'POST' && url.pathname === '/api/logout') {
           await body(req);
-          const cookie = /(?:^|;\s*)kindle_session=([A-Za-z0-9_-]+)/.exec(req.headers.cookie || '')?.[1];
-          if (cookie) sessions.delete(cookie);
+          const cookie = browserCredential(req);
+          if (cookie) await sessions.revoke(cookie);
           res.setHeader('Set-Cookie', 'kindle_session=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0'); json(res, 200, { ok: true }); return;
         }
         if (req.method === 'GET' && url.pathname === '/api/status') {

@@ -8,6 +8,35 @@ import { configure } from '../scripts/host-lib.mjs';
 import { createPublisher } from '../dist/src/http.js';
 import { sortEntries } from '../dist/src/library.js';
 
+test('remembered browser profile stays signed in after browser and service restart', async t => {
+  const base = await mkdtemp(path.join(os.tmpdir(), 'kindle-device-ui-'));
+  const repo = path.join(base, 'host'), source = path.join(base, 'source'); await mkdir(repo); await mkdir(source);
+  await configure(repo, { sourceDir: source, port: 0 });
+  let app = await createPublisher(repo);
+  const options = { headless: true, userDataDir: path.join(base, 'browser-profile'), ...(process.env.BROWSER_EXECUTABLE ? { executablePath: process.env.BROWSER_EXECUTABLE } : {}) };
+  let browser = await puppeteer.launch(options);
+  t.after(async () => { await browser.close(); await app.close(); await rm(base, { recursive: true, force: true, maxRetries: 10 }); });
+  let page = await browser.newPage();
+  const token = (await readFile(app.tokenFile, 'utf8')).trim();
+  await page.goto(app.url + '/#token=' + token);
+  await page.waitForSelector('#library-panel:not([hidden])');
+  const cookies = await browser.cookies();
+  const remembered = cookies.find(cookie => cookie.name === 'kindle_session');
+  assert.ok(remembered.httpOnly && remembered.expires > Date.now() / 1000 + 300 * 86400);
+  assert.equal(await page.evaluate(value => Object.values(localStorage).some(saved => saved.includes(value)), token), false);
+  await browser.close(); await app.close();
+  app = await createPublisher(repo);
+  browser = await puppeteer.launch(options);
+  page = await browser.newPage();
+  await page.goto(app.url);
+  await page.waitForSelector('#library-panel:not([hidden])');
+  assert.equal(await page.$eval('#login-panel', node => node.hidden), true);
+  await page.click('#logout');
+  await page.waitForSelector('#login-panel:not([hidden])');
+  await page.reload();
+  await page.waitForSelector('#login-panel:not([hidden])');
+});
+
 test('phone picker sorts, labels offline pin intent, and preserves preferences and selections', async t => {
   const base = await mkdtemp(path.join(os.tmpdir(), 'kindle-sort-ui-'));
   const repo = path.join(base, 'host'), source = path.join(base, 'source'); await mkdir(repo); await mkdir(source);

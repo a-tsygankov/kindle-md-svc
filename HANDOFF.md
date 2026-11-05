@@ -70,7 +70,11 @@ canonically and source overlap is refused before writes/deletion.
 
 ## Verification on 2026-11-04
 
-- Latest TypeScript build and **45/45 full tests passed** after picker changes.
+- Latest TypeScript build and **49/49 full tests passed** after remembered-login changes.
+- Browser sessions persist as HttpOnly/SameSite cookies for a rolling year, backed
+  by HMAC credential hashes in ignored `.state/device-sessions.json`. Reuse current
+  credentials on `-Open`; signout revokes one browser; reset/token rotation revokes
+  all. Legacy memory-only sessions require one new sign-in after upgrade.
 - Picker supports natural name, modified/created date, file-size sorting and
   pinned-folders-first; preferences persist per browser. Windows metadata adapter
   (`scripts/cloud-attributes.ps1`, `src/cloud-status.ts`) reads pin/recall flags
@@ -104,6 +108,10 @@ and EPUBCheck remain unverified. Be explicit about those limits. Never call SMTP
 acceptance device delivery. Wide/tall diagrams may require zooming.
 
 ## Source state and retained scratch
+
+PR #1 merged as `9e38c42`; local main was synchronized and passed 45 tests after
+merge. Remembered-browser follow-up is on `codex/remember-browser`; see the latest
+progress entry and GitHub for subsequent integration state.
 
 The user authorized PR creation, checks and merge on 2026-11-04. Published the
 existing local main baseline (`f847ac8`, initial source `6d33437`) to the previously
