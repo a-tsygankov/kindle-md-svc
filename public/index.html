@@ -31,6 +31,15 @@
       <section id="library-panel" class="panel" hidden>
         <div class="panel-heading"><div><span class="eyebrow">01 / SELECT</span><h2>Your documents</h2></div><button id="refresh" class="quiet">Refresh</button></div>
         <p id="source-label" class="muted"></p>
+        <label for="source-mode">Browse<select id="source-mode"><option value="library">Synced folder</option><option value="upload">Uploaded documents</option></select></label>
+        <div id="upload-zone" class="upload-zone" aria-label="Upload Markdown files">
+          <strong>Drop Markdown files here</strong>
+          <p class="small">From this Mac or Windows computer. Use a folder to include relative images.</p>
+          <div class="upload-actions"><button id="choose-files" type="button">Choose files</button><button id="choose-folder" type="button">Choose folder</button></div>
+          <input id="upload-files" type="file" accept=".md,.markdown,.png,.jpg,.jpeg,.gif,.webp" multiple hidden>
+          <input id="upload-folder" type="file" webkitdirectory multiple hidden>
+          <p id="upload-status" class="small" role="status"></p>
+        </div>
         <nav id="breadcrumbs" class="breadcrumbs" aria-label="Folder path"></nav>
         <label class="sr-only" for="filter">Filter filenames in this folder</label>
         <input id="filter" type="search" placeholder="Filter filenames in this folder" autocomplete="off">
@@ -38,8 +47,8 @@
           <label for="sort-by">Sort by<select id="sort-by"><option value="name">Name</option><option value="modified">Modified date</option><option value="created">Created date</option><option value="size">File size</option></select></label>
           <label for="sort-direction">Order<select id="sort-direction"><option value="asc">Ascending</option><option value="desc">Descending</option></select></label>
         </div>
-        <label class="pin-preference"><input id="pinned-first" type="checkbox">Pinned folders first</label>
-        <p class="small">✓ Pinned for offline use is the folder’s storage setting. It does not confirm every nested file has finished syncing. Folders stay above files.</p>
+        <div id="pin-options"><label class="pin-preference"><input id="pinned-first" type="checkbox">Pinned folders first</label>
+        <p class="small">✓ Pinned for offline use is the folder’s storage setting. It does not confirm every nested file has finished syncing. Folders stay above files.</p></div>
         <div id="file-list" class="file-list" aria-live="polite"></div>
         <div id="selection" class="selection"><span id="selection-count">No files selected</span><button id="clear-selection" class="text-button" hidden>Clear</button></div>
         <p id="selected-names" class="small selected-names"></p>
@@ -49,8 +58,14 @@
         </div>
         <p class="small format-note">EPUB is best for reading. PDF preserves layouts and supports pen markup after Send to Kindle import.</p>
       </section>
+      <section id="reader-panel" class="panel reader-panel" aria-label="Markdown reader">
+        <div class="panel-heading"><div><span class="eyebrow">02 / REVIEW</span><h2 id="source-title">Read Markdown</h2></div><span id="reader-origin" class="badge">Source</span></div>
+        <p id="source-details" class="small">Use Read beside a file, or upload a document to review it before conversion.</p>
+        <div class="reader-actions"><label class="pin-preference"><input id="wrap-source" type="checkbox" checked>Wrap lines</label><button id="convert-document" class="primary" disabled>Convert this document</button></div>
+        <pre id="source-content" class="source-content" tabindex="0" aria-label="Markdown source">Your Markdown source will appear here. Rendered diagrams and formatting are available in the converted preview.</pre>
+      </section>
       <section id="jobs-panel" class="panel">
-        <div class="panel-heading"><div><span class="eyebrow">02 / READ &amp; SEND</span><h2>Published copies</h2></div><span id="connection" class="badge connected">Local</span></div>
+        <div class="panel-heading"><div><span class="eyebrow">03 / READ &amp; SEND</span><h2>Published copies</h2></div><span id="connection" class="badge connected">Local</span></div>
         <p id="email-note" class="small"></p>
         <div id="job-list" class="job-list" aria-live="polite"><p class="empty">Your converted documents will appear here.</p></div>
       </section>

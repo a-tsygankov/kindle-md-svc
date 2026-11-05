@@ -24,10 +24,26 @@ Updated: 2026-11-04. Integration branch: local `main`.
 - Remembered-browser sign-in survives service/browser restarts through persistent
   HttpOnly cookies and hashed device records. One-year rolling lifetime, individual
   sign-out revocation, token/reset invalidation, and repeated-Open reuse.
+- Mail-client recipient configuration supports one/multiple values through JSON,
+  CLI and PowerShell. Mail button is pending the user's choice of iOS workflow;
+  plain mailto cannot attach files and the LAN phone URL currently uses HTTP.
+- Investigated desktop Send to Kindle: not detected on this host; unattended CLI
+  support unverified. Evidence and delivery tradeoffs: `docs/delivery-options.md`.
+- Power investigation: AC sleep is configured Never; no explicit service keep-awake
+  calls found. Elevated request diagnostics unavailable. Proposed 30-minute activity
+  window/idle quieting in `docs/power-management.md`; no power changes applied.
+- Desktop workspace: wide source reader beside file browser, wrap toggle, individual
+  Read/Convert, and responsive published-copy cards below; phone layout preserved.
+- Browser file picker/drop uploads and folder imports with relative raster assets;
+  authenticated managed copies, portable names, atomic quotas, source-kind jobs.
+  Uploaded documents work without a configured synced folder.
 
 ## Verified
 
-- Latest TypeScript build and full suite: **49 passed, 0 failed/skipped**.
+- Latest TypeScript build and full suite: **57 passed, 0 failed/skipped**.
+- Real uploaded Mermaid/image EPUB, safe source reads, path/encoding rejection,
+  standalone uploads, large-body routing, desktop file picker/drop, responsive
+  screenshots and independent read-only review verified.
 - Remembered login verified across real browser-profile/service restarts, signout,
   hashed-only persistence, renewal, expiry, token rotation and corrupt-state refusal.
 - Sorting, flag classification, real Windows metadata with Unicode names, and

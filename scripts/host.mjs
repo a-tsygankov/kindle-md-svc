@@ -10,6 +10,7 @@ const { values, positionals } = parseArgs({
   options: {
     repo: { type: 'string' }, source: { type: 'string' }, pandoc: { type: 'string' }, browser: { type: 'string' },
     out: { type: 'string' }, author: { type: 'string' },
+    'mail-to-kindle': { type: 'string', multiple: true }, 'clear-mail-to-kindle': { type: 'boolean' },
     file: { type: 'string', multiple: true, default: [] },
     'clear-source': { type: 'boolean' }, 'dry-run': { type: 'boolean' },
     dependencies: { type: 'boolean' }, tools: { type: 'boolean' },
@@ -71,6 +72,9 @@ async function main() {
     case 'configure': {
       const changes = {};
       if (values.author !== undefined) changes.author = values.author;
+      if (values['mail-to-kindle'] && values['clear-mail-to-kindle']) throw new Error('Use --mail-to-kindle or --clear-mail-to-kindle, not both.');
+      if (values['mail-to-kindle']) changes.mailToKindle = values['mail-to-kindle'];
+      if (values['clear-mail-to-kindle']) changes.mailToKindle = [];
       if (values.source !== undefined) changes.sourceDir = values.source;
       if (values['clear-source']) changes.sourceDir = '';
       if (values.pandoc !== undefined) changes.pandocPath = values.pandoc;

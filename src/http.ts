@@ -9,19 +9,21 @@ import { getConfig } from './config.js';
 import { listDirectory } from './library.js';
 import { JobQueue } from './jobs.js';
 import { DeviceSessions, SESSION_SECONDS } from './sessions.js';
+import { UploadStore } from './uploads.js';
+import { selectedFile, readLimited } from './library.js';
 import { startPaths, readJson, isAlive } from '../scripts/host-lib.mjs';
 
 class HttpError extends Error { constructor(readonly status: number, message: string) { super(message); } }
 const pageCsp = "default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; frame-src 'self'; object-src 'none'; base-uri 'none'; form-action 'self'; frame-ancestors 'none'";
 function json(res: ServerResponse, status: number, data: unknown): void { res.writeHead(status, { 'Content-Type': 'application/json; charset=utf-8' }); res.end(JSON.stringify(data)); }
-function body(req: IncomingMessage): Promise<Record<string, any>> {
+function body(req: IncomingMessage, limit = 65536): Promise<Record<string, any>> {
   if (!req.headers['content-type']?.toString().toLowerCase().startsWith('application/json')) throw new HttpError(415, 'Use JSON for this action.');
   return new Promise((resolve, reject) => {
     const chunks: Buffer[] = [];
     let bytes = 0, rejected = false;
     req.on('data', chunk => {
       bytes += chunk.length;
-      if (bytes > 65536) { if (!rejected) reject(new HttpError(413, 'Request is too large.')); rejected = true; return; }
+      if (bytes > limit) { if (!rejected) reject(new HttpError(413, 'Request is too large.')); rejected = true; return; }
       chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
     });
     req.on('end', () => {
@@ -65,6 +67,8 @@ export async function createPublisher(repo: string) {
     const sessions = await DeviceSessions.open(path.join(stateDir, 'device-sessions.json'), token);
     queue = await JobQueue.open(repo, config);
     const jobs = queue;
+    const uploads = new UploadStore(repo);
+    let uploading = false;
     const publicDir = fileURLToPath(new URL('../../public/', import.meta.url));
     const uiScript = fileURLToPath(new URL('./ui.js', import.meta.url));
     const equalToken = (value: unknown) => typeof value === 'string' && value.length <= 512 && timingSafeEqual(digest(value), digest(token));
@@ -126,9 +130,30 @@ export async function createPublisher(repo: string) {
             pinnedFirst: url.searchParams.get('pinnedFirst') === 'true',
           })); return;
         }
+        if (url.pathname === '/api/uploads' && req.method === 'GET') {
+          json(res, 200, await uploads.list({ sort: url.searchParams.get('sort') || 'name', direction: url.searchParams.get('direction') || 'asc' })); return;
+        }
+        if (url.pathname === '/api/uploads' && req.method === 'POST') {
+          if (uploading) throw new HttpError(429, 'Another upload is in progress. Please wait.');
+          uploading = true;
+          try { const input = await body(req, 42 * 1024 * 1024); json(res, 201, await uploads.import(input.files)); }
+          finally { uploading = false; }
+          return;
+        }
+        if (url.pathname === '/api/source' && req.method === 'GET') {
+          const source = url.searchParams.get('source') || 'library';
+          if (!['library', 'upload'].includes(source)) throw new HttpError(400, 'Unknown document source.');
+          const root = source === 'upload' ? await uploads.root() : config.sourceDir;
+          if (!root) throw new HttpError(400, 'Configure a source folder or upload documents.');
+          const file = await selectedFile(root, url.searchParams.get('file') || '');
+          const bytes = await readLimited(file, 2 * 1024 * 1024);
+          let text: string;
+          try { text = new TextDecoder('utf-8', { fatal: true }).decode(bytes); } catch { throw new HttpError(400, 'Markdown must be encoded as UTF-8.'); }
+          json(res, 200, { name: path.basename(file), text, bytes: bytes.length }); return;
+        }
         if (url.pathname === '/api/jobs') {
           if (req.method === 'GET') { json(res, 200, { jobs: jobs.list() }); return; }
-          if (req.method === 'POST') { const input = await body(req); json(res, 202, { jobs: await jobs.create(input.files, input.format) }); return; }
+          if (req.method === 'POST') { const input = await body(req); json(res, 202, { jobs: await jobs.create(input.files, input.format, input.source ?? 'library') }); return; }
         }
         const match = /^\/api\/jobs\/([a-f0-9-]{36})\/(download|preview|cancel|send)$/.exec(url.pathname);
         if (match) {

@@ -16,12 +16,26 @@ h3 { font-size: 16px; }
 p { line-height: 1.55; }
 label { display: block; font-weight: 600; font-size: 14px; }
 label input, label select { margin-top: 6px; }
-main, .page-header { max-width: 1170px; margin: auto; padding: 24px; }
+main, .page-header { max-width: 1680px; margin: auto; padding: 24px; }
 .page-header { display: flex; align-items: center; justify-content: space-between; padding-top: 30px; padding-bottom: 22px; gap: 12px; }
 .brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
 .brand-mark { width: 46px; height: 46px; display: grid; place-items: center; background: #23533c; color: #fff; border-radius: 12px; font-family: Georgia, serif; font-size: 28px; }
 .eyebrow { font-size: 10px; font-weight: 750; letter-spacing: 1.6px; color: #65786c; }
-.workspace { display: grid; grid-template-columns: minmax(0, 1.12fr) minmax(0, 1fr); gap: 24px; align-items: start; }
+.workspace { display: grid; grid-template-columns: minmax(320px, .7fr) minmax(0, 1.7fr); gap: 24px; align-items: start; }
+#jobs-panel { grid-column: 1 / -1; }
+.reader-panel { position: sticky; top: 16px; }
+.reader-panel h2 { overflow-wrap: anywhere; }
+.reader-actions, .upload-actions { display: flex; align-items: center; flex-wrap: wrap; gap: 10px; margin: 12px 0; }
+.reader-actions { justify-content: space-between; }
+.source-content { margin: 14px 0 0; padding: 20px; border: 1px solid #dce3de; border-radius: 10px; background: #f8faf8; color: #20392b; white-space: pre-wrap; overflow-wrap: anywhere; overflow: auto; max-height: 72vh; min-height: 480px; font: 14px/1.7 Consolas, "SFMono-Regular", monospace; tab-size: 4; }
+.source-content.no-wrap { white-space: pre; overflow-wrap: normal; }
+.upload-zone { border: 1px dashed #8ca895; border-radius: 10px; padding: 14px; margin: 14px 0; }
+.upload-zone.drag-over { background: #e6f1e8; border-color: #23533c; }
+.upload-zone strong { font-size: 14px; }
+.upload-actions button { font-size: 12px; }
+.document-row { display: flex; align-items: center; border-bottom: 1px solid #e9eeea; }
+.document-row .file-row { border: 0; flex: 1; min-width: 0; }
+.read-file { flex: 0 0 auto; font-size: 12px; margin-right: 4px; }
 .panel { background: #fff; border: 1px solid #dce3de; border-radius: 16px; padding: 24px; min-width: 0; box-shadow: 0 4px 16px #203b2b04; }
 .panel-heading { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 14px; }
 .quiet { background: transparent; font-size: 14px; }
@@ -31,7 +45,7 @@ main, .page-header { max-width: 1170px; margin: auto; padding: 24px; }
 .small { font-size: 12px; line-height: 1.6; }
 .breadcrumbs { display: flex; flex-wrap: wrap; align-items: center; gap: 3px; margin: 14px 0; }
 .breadcrumbs button { font-size: 13px; min-height: 36px; border: 0; padding: 7px; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
-.file-list { margin-top: 14px; border-top: 1px solid #e9eeea; min-height: 120px; max-height: 440px; overflow: auto; }
+.file-list { margin-top: 14px; border-top: 1px solid #e9eeea; min-height: 120px; max-height: 60vh; overflow: auto; }
 .file-row, .folder-row { display: flex; align-items: center; gap: 12px; width: 100%; padding: 16px 8px; border: 0; border-bottom: 1px solid #e9eeea; border-radius: 0; background: #fff; text-align: left; min-height: 68px; }
 .file-row { cursor: pointer; font-weight: 500; font-size: 15px; }
 .file-row:has(input:checked) { background: #f1f7f1; }
@@ -56,6 +70,7 @@ main, .page-header { max-width: 1170px; margin: auto; padding: 24px; }
 .state-running, .state-queued { background: #f4efd9; color: #6b5518; }
 .state-failed, .state-interrupted { background: #f8e8e4; color: #8c3d2a; }
 .job-list { margin-top: 18px; display: grid; gap: 14px; }
+@media (min-width: 1100px) { .job-list { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 .job-card { border: 1px solid #e0e6e1; padding: 16px; border-radius: 11px; }
 .job-heading { display: flex; justify-content: space-between; align-items: start; gap: 10px; }
 .job-title { min-width: 0; overflow-wrap: anywhere; }
@@ -84,6 +99,8 @@ iframe { width: 100%; flex: 1; border: 0; background: #fff; }
   main, .page-header { padding: 16px; }
   .page-header { padding-top: 22px; }
   .workspace { grid-template-columns: minmax(0,1fr); gap: 18px; }
+  .reader-panel { position: static; }
+  .source-content { min-height: 240px; max-height: 55vh; padding: 14px; font-size: 12px; }
   .panel { padding: 18px; border-radius: 13px; }
   h1 { font-size: 19px; }
   .publish-bar { flex-direction: column; align-items: stretch; }
