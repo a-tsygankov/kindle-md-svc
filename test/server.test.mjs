@@ -67,3 +67,23 @@ test('JSON filenames survive a UTF-8 character split across request chunks', asy
   });
   assert.equal(status, 202);
 });
+
+test('remembered browser works after service restart and sign-out revocation survives restart', async t => {
+  const app = await publisherFixture(t);
+  const login = await fetch(app.url + '/api/session', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ token: app.token }) });
+  const setCookie = login.headers.get('set-cookie');
+  assert.match(setCookie, /Max-Age=31536000/);
+  const cookie = setCookie.split(';')[0];
+  const again = await fetch(app.url + '/api/session', { method: 'POST', headers: { Cookie: cookie, 'Content-Type': 'application/json' }, body: JSON.stringify({ token: app.token }) });
+  assert.equal(again.headers.get('set-cookie').split(';')[0], cookie);
+  await app.close();
+  let restarted = await createPublisher(app.repo);
+  t.after(() => restarted.close());
+  assert.equal((await fetch(restarted.url + '/api/status', { headers: { Cookie: cookie } })).status, 200);
+  const logout = await fetch(restarted.url + '/api/logout', { method: 'POST', headers: { Cookie: cookie, 'Content-Type': 'application/json' }, body: '{}' });
+  assert.equal(logout.status, 200);
+  assert.match(logout.headers.get('set-cookie'), /Max-Age=0/);
+  await restarted.close();
+  restarted = await createPublisher(app.repo);
+  assert.equal((await fetch(restarted.url + '/api/status', { headers: { Cookie: cookie } })).status, 401);
+});

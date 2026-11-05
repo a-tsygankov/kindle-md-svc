@@ -119,7 +119,21 @@ The service generates `.state/access-token` on first startup. Only this file
 contains the token; routine status/logs do not. `-Open` uses a URL fragment for
 local login, which is not sent to the server and is removed from browser history
 by the UI. The browser uses an HttpOnly SameSite=Strict session cookie afterward.
-Sessions expire after 24 hours or a service restart. Reset rotates the token.
+Entering the token remembers this browser automatically. Its random HttpOnly,
+SameSite=Strict cookie lasts 365 days and renews with use (at most once per day).
+The service persists only token-bound credential hashes and expiry times in
+ignored `.state/device-sessions.json`; the access token is never saved in browser
+local storage. Browser and service restarts preserve sign-in. Repeated `-Open`
+logins reuse the current browser credential instead of filling the 200-device cap.
+
+**Sign out** revokes this browser on the server and removes its cookie. Other
+browsers stay remembered. Reset removes remembered devices and rotates the token;
+replacing the token and restarting also invalidates old browser credentials.
+Browser data clearing, private browsing, a changed host/IP, or a year of inactivity
+can require sign-in again. The service cannot override browser cookie policies.
+Sessions from versions before this change were memory-only, so sign in once after
+upgrading. Subsequent starts preserve the new remembered login. If session state
+is corrupt or redirected, startup fails closed with a local recovery message.
 
 Default listener: `127.0.0.1:8787`. For a phone on a trusted LAN:
 

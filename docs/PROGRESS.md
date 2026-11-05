@@ -253,3 +253,30 @@ failures, and next steps. Do not put secrets or private document contents here.
   repeated the delayed-navigation scenario and confirmed the fix; no remaining
   critical/important findings. User has authorized merge. The PR page records the
   authoritative merge result/SHA; synchronize main before the next development task.
+
+## 2026-11-04 - Remember browser sign-in
+
+- PR #1 merged as `9e38c42`. Synced main and verified 45 tests again; service
+  restarted with LAN health 200 before this follow-up began.
+- User requested remembering devices after entering the access token. Replaced
+  ephemeral 24-hour sessions with 365-day persistent HttpOnly/SameSite cookies,
+  renewed daily with use. Store only token-bound credential hashes/expiries in
+  ignored `.state/device-sessions.json`; no access token in browser localStorage.
+- Service/browser restarts preserve sign-in. Signout revokes one browser durably;
+  reset or token rotation/restart invalidates all. Bound records to 200 and state
+  size to 128 KiB; corrupt/redirected state fails closed. Old memory-only sessions
+  cannot be migrated, so one new token login is needed after upgrading.
+- Regression failed first for old cookie expiry; new tests cover durable login,
+  renewal/expiry, individual revocation, token rotation, corruption and a real
+  persisted browser profile reopened with the service. Full suite passed 49/49.
+- Independent review found repeated token-fragment Open actions could exhaust the
+  device cap. A failing reuse regression reproduced it. Token login now reuses a
+  valid current credential; HTTP/unit tests check repeated login returns the same
+  browser credential. Source/config/exports remain untouched.
+- Final build and 49/49 tests passed after credential reuse; reviewer verified the
+  fix with no remaining critical/important findings. Follow-up uses the same
+  PR/check/merge workflow as PR #1. No host paths, tokens or device records enter Git.
+- Published `0545de8` and opened
+  [PR #2](https://github.com/a-tsygankov/kindle-md-svc/pull/2). GitHub reported
+  clean/mergeable with no hosted checks. The PR page records final merge state/SHA;
+  source/config and device credentials remain separate from tracked code.

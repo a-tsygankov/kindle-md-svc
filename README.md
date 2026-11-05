@@ -34,7 +34,9 @@ browser window without printing the private access token. If already running,
 
 Default address is `http://127.0.0.1:8787`. Access is token-protected. The token is
 stored in ignored `.state/access-token`; the browser stores an HttpOnly session
-cookie. Resetting generated state rotates the token. Keep the token private.
+cookie that remembers this browser across browser/service restarts. Sign-in lasts
+a year and renews with use; Sign out forgets this browser. Resetting generated
+state rotates the token and forgets all browsers. Keep the token private.
 
 ## Read and send
 

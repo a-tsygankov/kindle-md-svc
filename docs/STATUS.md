@@ -21,10 +21,15 @@ Updated: 2026-11-04. Integration branch: local `main`.
   direction; optional pinned-folders-first grouping. Browser remembers settings.
 - Windows offline-pin/recall indicators distinguish retention intent from pending
   downloads; metadata-only checks, unknown fallback on unsupported/error states.
+- Remembered-browser sign-in survives service/browser restarts through persistent
+  HttpOnly cookies and hashed device records. One-year rolling lifetime, individual
+  sign-out revocation, token/reset invalidation, and repeated-Open reuse.
 
 ## Verified
 
-- Latest TypeScript build and full suite: **45 passed, 0 failed/skipped**.
+- Latest TypeScript build and full suite: **49 passed, 0 failed/skipped**.
+- Remembered login verified across real browser-profile/service restarts, signout,
+  hashed-only persistence, renewal, expiry, token rotation and corrupt-state refusal.
 - Sorting, flag classification, real Windows metadata with Unicode names, and
   phone-width preference/selection persistence verified; screenshot inspected.
 - Real EPUB/PDF metadata and configured author propagation through job workers
