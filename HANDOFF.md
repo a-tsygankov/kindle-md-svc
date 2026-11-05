@@ -134,6 +134,9 @@ acceptance device delivery. Wide/tall diagrams may require zooming.
 Current working branch: `codex/desktop-workspace`, based on merged PR #2. It
 preserves earlier recipient configuration and delivery/power research alongside
 the desktop feature. Mail-client UI and power policy remain deferred.
+Integration: [PR #3](https://github.com/a-tsygankov/kindle-md-svc/pull/3), published
+as `ed2469d` plus documentation records. Full 57-test Windows suite passes;
+independent review is clear. Check the PR for final merge state/SHA.
 
 PR #1 merged as `9e38c42`; local main was synchronized and passed 45 tests after
 merge. Remembered-browser follow-up is on `codex/remember-browser`; see the latest

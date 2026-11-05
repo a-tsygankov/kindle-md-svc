@@ -358,3 +358,8 @@ failures, and next steps. Do not put secrets or private document contents here.
   Deferred mail-client UI/sleep decisions remain deferred; no real messages or
   private user documents were submitted/converted. Normal reset covers upload
   copies, and recreation scripts/default local-source behavior remain compatible.
+- Published `ed2469d` and opened
+  [PR #3](https://github.com/a-tsygankov/kindle-md-svc/pull/3). Publish scan covered
+  all 75 source files with no actual source path/token/personal recipient included;
+  PowerShell parse and staged whitespace checks passed. No hosted CI configured.
+  The PR records the authoritative integration state/SHA.
