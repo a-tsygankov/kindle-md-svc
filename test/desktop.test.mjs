@@ -1,0 +1,46 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { mkdtemp, mkdir, writeFile, readFile, rm } from 'node:fs/promises';
+import os from 'node:os';
+import path from 'node:path';
+import puppeteer from 'puppeteer';
+import { configure } from '../scripts/host-lib.mjs';
+import { createPublisher } from '../dist/src/http.js';
+
+test('desktop browses source, uploads and drops external Markdown, reads safely and converts', async t => {
+  const base = await mkdtemp(path.join(os.tmpdir(), 'kindle-desktop-'));
+  const repo = path.join(base, 'host'), source = path.join(base, 'source'); await mkdir(repo); await mkdir(source);
+  await writeFile(path.join(source, 'Synced Mac notes.md'), '# Synced Markdown\n\nReady for reading.');
+  const external = path.join(base, 'Windows notes.md');
+  await writeFile(external, '# External Windows notes\r\n\r\n<script>window.uploadExecuted=true</script>\r\n\r\n```mermaid\r\nflowchart LR\r\nA-->B\r\n```');
+  await configure(repo, { sourceDir: source, port: 0 });
+  const app = await createPublisher(repo);
+  const browser = await puppeteer.launch({ headless: true, ...(process.env.BROWSER_EXECUTABLE ? { executablePath: process.env.BROWSER_EXECUTABLE } : {}) });
+  t.after(async () => { await browser.close(); await app.close(); await rm(base, { recursive: true, force: true, maxRetries: 10 }); });
+  const page = await browser.newPage(); await page.setViewport({ width: 1600, height: 1000 });
+  const errors = []; page.on('pageerror', error => errors.push(error.message));
+  await page.goto(app.url + '/#token=' + (await readFile(app.tokenFile, 'utf8')).trim());
+  await page.waitForSelector('[data-read="Synced Mac notes.md"]', { timeout: 3000 });
+  await page.click('[data-read="Synced Mac notes.md"]');
+  await page.waitForFunction(() => document.querySelector('#source-content')?.textContent.includes('# Synced Markdown'));
+  const input = await page.$('#upload-files'); await input.uploadFile(external);
+  await page.waitForFunction(() => document.querySelector('#source-content')?.textContent.includes('# External Windows notes'));
+  assert.equal(await page.evaluate(() => window.uploadExecuted), undefined);
+  assert.match(await page.$eval('#source-content', node => node.textContent), /<script>/);
+  const bounds = await page.evaluate(() => ({ file: document.querySelector('#library-panel').getBoundingClientRect().toJSON(), reader: document.querySelector('#reader-panel').getBoundingClientRect().toJSON() }));
+  assert.ok(bounds.reader.x > bounds.file.x && bounds.reader.width > 650);
+  await page.click('#convert-document');
+  await page.waitForSelector('[data-state="ready"]', { timeout: 20_000 });
+  await page.evaluate(() => {
+    const data = new DataTransfer(); data.items.add(new File(['# Dropped Mac document\n\nReady.'], 'Dropped Mac.md', { type: 'text/markdown' }));
+    document.querySelector('#upload-zone').dispatchEvent(new DragEvent('drop', { bubbles: true, cancelable: true, dataTransfer: data }));
+  });
+  await page.waitForFunction(() => document.querySelector('#source-content')?.textContent.includes('# Dropped Mac document'));
+  assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+  await mkdir('output', { recursive: true });
+  await page.screenshot({ path: 'output/desktop-workspace.png', fullPage: true });
+  await page.setViewport({ width: 390, height: 844 });
+  assert.ok(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
+  await page.screenshot({ path: 'output/desktop-workspace-mobile.png', fullPage: true });
+  assert.deepEqual(errors, []);
+});

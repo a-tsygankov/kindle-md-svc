@@ -70,7 +70,29 @@ canonically and source overlap is refused before writes/deletion.
 
 ## Verification on 2026-11-04
 
-- Latest TypeScript build and **49/49 full tests passed** after remembered-login changes.
+- Latest TypeScript build and **57/57 full tests passed** after desktop uploads.
+- Desktop reader/file browser are side by side; phone panels stack. Read source
+  as inert text, then Convert this document or selected batch. File/drop uploads
+  and folder imports preserve raster assets under managed `output/uploads`.
+  Explicit job source kind confines conversion resources to each upload batch.
+- Uploads: 10 documents, 100 images, 30 MiB per batch; 2 MiB Markdown/10 MiB image;
+  100 retained batches. Reset removes uploaded copies with output, never originals.
+  Standalone upload use without sourceDir is verified. Desktop/mobile screenshots
+  inspected; independent review found no critical/important issues.
+- Earlier `codex/mail-to-kindle` work: validated one/multiple recipient config
+  and scripts implemented; actual address saved only in ignored local config.
+  Mail UI is pending user workflow choice. iOS mailto cannot attach files, native
+  Web Share needs HTTPS and lacks a recipient field, .eml is not a reliable
+  cross-client editable draft. A follow-up question is pending in this chat.
+- Desktop sender investigation: no Send to Kindle installation detected on the
+  current host. No documented official unattended CLI/API found; current binary
+  launch behavior unverified. See `docs/delivery-options.md`. SMTP remains the
+  implemented unattended submission path, pending real provider configuration.
+- Delivery choice is deferred by the user. Sleep investigation found AC idle sleep
+  set to Never under High performance; battery timeout 10 minutes. No power settings
+  changed; active power requests could not be read without elevation. Proposed
+  quiet-listener/30-minute activity-lease policy is in `docs/power-management.md`;
+  not implemented. Avoid treating browser polling as deliberate activity.
 - Browser sessions persist as HttpOnly/SameSite cookies for a rolling year, backed
   by HMAC credential hashes in ignored `.state/device-sessions.json`. Reuse current
   credentials on `-Open`; signout revokes one browser; reset/token rotation revokes
@@ -108,6 +130,10 @@ and EPUBCheck remain unverified. Be explicit about those limits. Never call SMTP
 acceptance device delivery. Wide/tall diagrams may require zooming.
 
 ## Source state and retained scratch
+
+Current working branch: `codex/desktop-workspace`, based on merged PR #2. It
+preserves earlier recipient configuration and delivery/power research alongside
+the desktop feature. Mail-client UI and power policy remain deferred.
 
 PR #1 merged as `9e38c42`; local main was synchronized and passed 45 tests after
 merge. Remembered-browser follow-up is on `codex/remember-browser`; see the latest

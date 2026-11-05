@@ -14,7 +14,7 @@ export function isAlive(pid) {
 }
 
 export const smtpDefaults = Object.freeze({ enabled: false, host: '', port: 587, security: 'starttls', from: '', to: '', user: '', passwordEnv: 'KINDLE_SMTP_PASSWORD', maxAttachmentBytes: 20 * 1024 * 1024 });
-export const defaults = Object.freeze({ schemaVersion: 1, sourceDir: '', author: 'AT', pandocPath: '', browserPath: '', listenHost: '127.0.0.1', port: 8787, smtp: smtpDefaults });
+export const defaults = Object.freeze({ schemaVersion: 1, sourceDir: '', author: 'AT', mailToKindle: Object.freeze([]), pandocPath: '', browserPath: '', listenHost: '127.0.0.1', port: 8787, smtp: smtpDefaults });
 
 function validateConfig(config) {
   for (const key of Object.keys(config)) if (!Object.hasOwn(defaults, key)) throw new Error(`Unknown config field: ${key}`);
@@ -24,6 +24,11 @@ function validateConfig(config) {
   }
   if (typeof result.author !== 'string' || !result.author.trim() || result.author.length > 512 || /[\x00-\x1f\x7f]/.test(result.author)) throw new Error('Config author must be 1 to 512 characters without control characters.');
   result.author = result.author.trim();
+  const addresses = typeof result.mailToKindle === 'string' ? [result.mailToKindle] : result.mailToKindle;
+  if (!Array.isArray(addresses) || addresses.length > 20 || addresses.some(value => typeof value !== 'string' || value.length > 254 || /[\x00-\x1f\x7f]/.test(value) || !/^[^\s<>@,;:"\\]+@[A-Za-z0-9](?:[A-Za-z0-9.-]*[A-Za-z0-9])?$/.test(value.trim()))) throw new Error('Config mailToKindle must contain up to 20 individual email addresses.');
+  const uniqueAddresses = new Map();
+  for (const value of addresses) if (!uniqueAddresses.has(value.trim().toLowerCase())) uniqueAddresses.set(value.trim().toLowerCase(), value.trim());
+  result.mailToKindle = [...uniqueAddresses.values()];
   if (result.listenHost !== 'localhost' && !isIP(result.listenHost)) throw new Error('listenHost must be localhost or an IP address.');
   if (!Number.isInteger(result.port) || result.port < 0 || result.port > 65535) throw new Error('port must be between 0 and 65535.');
   if (!result.smtp || typeof result.smtp !== 'object' || Array.isArray(result.smtp)) throw new Error('smtp must be an object.');

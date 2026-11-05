@@ -303,3 +303,20 @@ test('service author defaults, config validation, and CLI configuration round tr
   }
   assert.equal((await loadConfig(repo)).author, 'AT & Team');
 });
+
+test('mail-to-kindle accepts one or multiple addresses, deduplicates, validates, and clears via CLI', async t => {
+  const { repo } = await fixture(t);
+  assert.deepEqual((await loadConfig(repo)).mailToKindle, []);
+  await configure(repo, { mailToKindle: 'reader@kindle.com' });
+  assert.deepEqual((await loadConfig(repo)).mailToKindle, ['reader@kindle.com']);
+  const exec = promisify(execFile);
+  await exec(process.execPath, [path.resolve('scripts/host.mjs'), 'configure', '--repo', repo,
+    '--mail-to-kindle', 'first@kindle.com', '--mail-to-kindle', 'second@kindle.com', '--mail-to-kindle', 'FIRST@kindle.com']);
+  assert.deepEqual((await loadConfig(repo)).mailToKindle, ['first@kindle.com', 'second@kindle.com']);
+  for (const value of [null, 3, [''], ['bad'], ['x@kindle.com\r\nBcc: bad@example.test'], ['a@b.test,c@d.test'], Array(21).fill('reader@kindle.com')]) {
+    await assert.rejects(configure(repo, { mailToKindle: value }), /mailToKindle/);
+  }
+  assert.equal((await loadConfig(repo)).mailToKindle.length, 2);
+  await exec(process.execPath, [path.resolve('scripts/host.mjs'), 'configure', '--repo', repo, '--clear-mail-to-kindle']);
+  assert.deepEqual((await loadConfig(repo)).mailToKindle, []);
+});

@@ -87,3 +87,42 @@ test('remembered browser works after service restart and sign-out revocation sur
   restarted = await createPublisher(app.repo);
   assert.equal((await fetch(restarted.url + '/api/status', { headers: { Cookie: cookie } })).status, 401);
 });
+
+test('authenticated uploads can be read safely and converted with Mermaid plus relative images', async t => {
+  const app = await publisherFixture(t);
+  assert.equal((await fetch(app.url + '/api/uploads')).status, 401);
+  const headers = { Authorization: `Bearer ${app.token}`, 'Content-Type': 'application/json' };
+  const original = await (await fetch(app.url + '/api/source?file=hello.md', { headers })).json();
+  assert.match(original.text, /# Hello Scribe/);
+  assert.equal((await fetch(app.url + '/api/source?file=../secret.md', { headers })).status, 400);
+  const image = await readFile(new URL('../spike/fixtures/assets/reading progress.png', import.meta.url));
+  const markdown = '# Uploaded notes\r\n\r\n<script>alert(1)</script>\r\n\r\n```mermaid\r\nflowchart LR\r\nA-->B\r\n```\r\n\r\n![Chart](assets/chart.png)';
+  const uploaded = await fetch(app.url + '/api/uploads', { method: 'POST', headers, body: JSON.stringify({ files: [{ path: 'Mac notes.md', data: Buffer.from(markdown).toString('base64') }, { path: 'assets/chart.png', data: image.toString('base64') }] }) });
+  assert.equal(uploaded.status, 201);
+  const { entries } = await uploaded.json();
+  const id = entries[0].id;
+  const source = await (await fetch(app.url + '/api/source?source=upload&file=' + encodeURIComponent(id), { headers })).json();
+  assert.equal(source.text, markdown);
+  assert.equal((await fetch(app.url + '/api/source?source=other&file=' + encodeURIComponent(id), { headers })).status, 400);
+  const conversion = await fetch(app.url + '/api/jobs', { method: 'POST', headers, body: JSON.stringify({ source: 'upload', files: [id], format: 'epub' }) });
+  assert.equal(conversion.status, 202);
+  const created = (await conversion.json()).jobs[0];
+  let job;
+  for (let i = 0; i < 200; i++) { job = app.queue.get(created.id); if (['ready', 'failed'].includes(job.state)) break; await new Promise(r => setTimeout(r, 50)); }
+  assert.equal(job.state, 'ready', job.error);
+  assert.equal(job.source, 'upload');
+  assert.equal(job.result.diagrams, 1);
+  assert.equal(job.result.images, 1);
+  assert.equal((await fetch(`${app.url}/api/jobs/${job.id}/download`, { headers })).status, 200);
+});
+
+test('upload endpoint accepts Markdown larger than ordinary JSON API bodies', async t => {
+  const app = await publisherFixture(t);
+  const headers = { Authorization: `Bearer ${app.token}`, 'Content-Type': 'application/json' };
+  const text = '# Generated report\n\n' + 'x'.repeat(70 * 1024);
+  const response = await fetch(app.url + '/api/uploads', { method: 'POST', headers, body: JSON.stringify({ files: [{ path: 'report.md', data: Buffer.from(text).toString('base64') }] }) });
+  assert.equal(response.status, 201);
+  const id = (await response.json()).entries[0].id;
+  const read = await (await fetch(app.url + '/api/source?source=upload&file=' + encodeURIComponent(id), { headers })).json();
+  assert.equal(read.text, text);
+});

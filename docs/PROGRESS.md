@@ -280,3 +280,81 @@ failures, and next steps. Do not put secrets or private document contents here.
   [PR #2](https://github.com/a-tsygankov/kindle-md-svc/pull/2). GitHub reported
   clean/mergeable with no hosted checks. The PR page records final merge state/SHA;
   source/config and device credentials remain separate from tracked code.
+
+## 2026-11-04 - Mail-to-Kindle configuration and iOS workflow decision
+
+- PR #2 merged as `786577b`; main synchronized and 49 tests passed after merge.
+- User requested one/multiple mail-to-kindle recipients and default-client email
+  with converted document attached. Supplied personal address is saved only in
+  ignored local configuration; never in tracked docs/templates/tests.
+- Added `mailToKindle` JSON string/array normalization, default empty list, max20,
+  case-insensitive deduplication preserving first order, invalid/header-injection
+  rejection, repeated CLI `--mail-to-kindle`, PowerShell `-MailToKindle`, and clear
+  options. New regression failed first, then passed. Full build/suite: 50/50 pass.
+- User asked what iOS mail clients support. Verified mailto recipient/subject/body
+  via Apple/RFC documentation; attachments are unsupported in standard mailto.
+  Web Share can pass files only in a secure context and does not set recipient.
+  Current phone URL is HTTP. Asked user to choose a portable download/manual-attach
+  panel versus HTTPS sharing. Configuration work is complete; dependent UI work
+  remains pending. No actual mail client was launched and no message was sent.
+
+## 2026-11-04 - Investigate desktop Send to Kindle
+
+- User asked whether installed laptop sharing tools could support a single send
+  action. Read-only inventories found no Kindle desktop sender/reader in standard
+  install registries, Store packages, Start apps, common folders, App Paths,
+  Explorer SendTo/context handlers or printers on this Windows host. Other laptops
+  were not inspected. Nonstandard portable installations cannot be ruled out.
+- Amazon's overview confirms desktop/mobile/email/web submission and EPUB/PDF
+  support. Its legacy PC page shows Explorer/printing integration. No documented
+  official unattended CLI/API was found; current download pages were blocked by
+  503/bot checks. No installed binary exists here for argument/UI testing.
+- Recorded evidence and limits in `docs/delivery-options.md`. A future host
+  launcher could open a generated export, but confirmation on the laptop may
+  remain necessary; no automatic-submission promise is supported by this check.
+- Existing SMTP backend is the practical unattended phone-action route once
+  provider/sender credentials and Kindle approval are configured. No software
+  installed, accounts accessed, confirmation clicked, or message submitted.
+
+## 2026-11-04 - Investigate sleep and propose bounded active window
+
+- User deferred delivery-tool decisions and requested verification of apparent
+  sleep prevention plus a reasonable approximately 30-minute service activity policy.
+- Read-only powercfg query found active High performance plan: AC sleep Never,
+  battery sleep 10 minutes, hibernation timeout disabled. Host supports connected
+  S0 Modern Standby rather than S3. No power settings were changed.
+- Active-power-request/wake-timer diagnostics require elevation and were unavailable
+  in this session; no claim that all blockers are ruled out. No explicit power
+  prevention calls found in service code; no conversion children running now.
+- Identified unnecessary idle activity: supervisor writes every 200 ms and web
+  clients poll every 1.5 seconds. Recorded proposal in `docs/power-management.md`:
+  quiet listener, 30-minute meaningful-activity lease, bounded active-job protection,
+  no renewal from polling/background tabs, lower heartbeat I/O, manual-sleep respect.
+- Complete 30-minute idle exit is an optional tradeoff because the phone cannot
+  restart a stopped listener without a host launcher. No lifecycle/power policy
+  code implemented; delivery workflow remains deferred and no email was sent.
+
+## 2026-11-04 - Desktop Markdown review and browser uploads
+
+- User requested desktop visibility to read generated Markdown and convert it,
+  explicitly including uploads/drag-and-drop from arbitrary Mac/Windows paths.
+  Kept earlier recipient config/research changes intact on codex/desktop-workspace.
+- Added bounded authenticated upload store/API, retained listing, and inert source
+  read API. UTF-8 Markdown and raster files are copied atomically to managed output;
+  safe portable paths, canonical roots, encoding and byte/count limits enforced.
+  Folder picker preserves relative images; originals/cloud source stay unchanged.
+- Explicit library/upload job source is persisted; conversion workers use the
+  upload batch as resource root. Existing jobs remain compatible. Uploaded files
+  work without configuring iCloud/sourceDir.
+- Added wide desktop browser/reader, source wrap and Read/Convert, file/folder
+  pickers, drop area, source switch, responsive cards and phone stacking. Internal
+  upload UUIDs are omitted from user-facing selected names/job paths.
+- Regression tests failed first for missing upload/source API and Read controls.
+  Final build/full suite passed **57/57**, with real Mermaid/image EPUB uploads,
+  source safety, portable-path/encoding/size rejection, retained imports, standalone
+  conversion without sourceDir, body larger than ordinary JSON limit, real desktop
+  file picker and synthetic drag/drop. Desktop/mobile screenshots inspected.
+- Independent read-only review found no actionable critical/important issues.
+  Deferred mail-client UI/sleep decisions remain deferred; no real messages or
+  private user documents were submitted/converted. Normal reset covers upload
+  copies, and recreation scripts/default local-source behavior remain compatible.

@@ -4,6 +4,12 @@ A local, on-demand Markdown publisher for Kindle Scribe. Browse locally synced
 iCloud Drive or another folder, select documents, render Mermaid diagrams,
 preview, and download EPUB/PDF or submit to a configured Send to Kindle email.
 
+On desktop, browse files beside a large Markdown source reader, then convert one
+document or a selected batch. **Choose files** or drag Markdown into the upload
+area from any Mac/Windows folder. **Choose folder** also includes relative raster
+images. Browser uploads work without configuring a synced source. Originals stay
+unchanged; uploaded copies remain on the service host until reset.
+
 Generated document titles match the Markdown filename without its extension.
 Author defaults to `AT`; change it with `scripts/configure.ps1 -Author 'Your name'`
 and restart. These values override front matter and apply to new conversions.

@@ -5,7 +5,7 @@ export interface SmtpConfig {
   from: string; to: string; user: string; passwordEnv: string; maxAttachmentBytes: number;
 }
 export interface Config {
-  schemaVersion: 1; sourceDir: string; author: string; pandocPath: string; browserPath: string;
+  schemaVersion: 1; sourceDir: string; author: string; mailToKindle: string[]; pandocPath: string; browserPath: string;
   listenHost: string; port: number; smtp: SmtpConfig;
 }
 export async function getConfig(repo: string): Promise<Config> { return await loadConfig(repo) as Config; }

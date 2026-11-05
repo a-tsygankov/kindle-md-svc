@@ -2,6 +2,7 @@
   "schemaVersion": 1,
   "sourceDir": "",
   "author": "AT",
+  "mailToKindle": [],
   "pandocPath": "",
   "browserPath": "",
   "listenHost": "127.0.0.1",

@@ -56,6 +56,9 @@ permitted by that policy rather than changing machine-wide policy for this app.
 ```powershell
 .\scripts\configure.ps1 -SourceDir '<new source folder>'
 .\scripts\configure.ps1 -Author 'AT'
+.\scripts\configure.ps1 -MailToKindle 'reader@kindle.com'
+.\scripts\configure.ps1 -MailToKindle @('first@kindle.com', 'second@kindle.com')
+.\scripts\configure.ps1 -ClearMailToKindle
 .\scripts\configure.ps1 -ListenHost 127.0.0.1 -Port 8787
 .\scripts\configure.ps1 -Show
 .\scripts\configure.ps1 -PandocPath '<optional executable path>'
@@ -73,6 +76,59 @@ settings/environment; there is no live configuration reload.
 JSON. Tools otherwise discover local portable executables. The browser cache is
 `.tools/puppeteer`, unless `PUPPETEER_CACHE_DIR` is explicitly overridden. Setup
 provisions the repository cache; provision a separate override cache yourself.
+
+## Mail-client Kindle recipients
+
+`mailToKindle` accepts one address or an array and normalizes to an ordered list
+of up to 20 unique addresses. CLI: repeat `--mail-to-kindle ADDRESS` for multiple
+values, or use `--clear-mail-to-kindle`. PowerShell uses `-MailToKindle` with a
+string/array, or `-ClearMailToKindle`. Clear and set cannot be combined.
+Personal recipients belong in ignored `config.local.json`; the template is empty.
+These addresses are separate from the fixed SMTP recipient and do not enable SMTP.
+
+Mail-client UI workflow is awaiting selection: standard browser `mailto:` links
+cannot attach files. On the current HTTP LAN site, the portable iPhone workflow
+requires downloading the document and adding it manually in the mail app. Native
+web file sharing requires HTTPS and cannot reliably prefill the email recipient.
+
+## Desktop workspace, source review and uploads
+
+The desktop layout places the file browser beside a wide, wrapping Markdown
+source reader, with published copies below. On phones these panels stack. Use
+**Read** beside a document, or select it, to see its source before conversion.
+**Convert this document** converts the reader's file; **Convert selected** converts
+the current selection. EPUB/PDF uses the Reading format control. Source review is
+read-only and inert; use a ready job's **Preview** for rendered formatting/Mermaid.
+
+**Browse** switches between the synced folder and retained uploaded documents.
+Selections are cleared when switching sources so a batch has one explicit source.
+The reader identifies its source and can still convert its displayed document.
+
+**Choose files** accepts Markdown plus optional PNG/JPEG/GIF/WebP files from the
+computer running the browser. Individual files can also be dropped in the upload
+area. **Choose folder** preserves directory structure for relative images; hidden
+items and unsupported file types in folder selections are ignored. Dropped folders
+are rejected with guidance to use the folder picker. ZIP/archive imports, SVG,
+remote images and automatic discovery of client-side image files are unsupported.
+For `![x](assets/chart.png)`, select a containing folder with both the Markdown and
+that image. Use smaller folder selections if the import exceeds the limits.
+
+Each upload allows 1–10 UTF-8 Markdown files (2 MiB each), up to 100 raster images
+(10 MiB each), and 30 MiB total. Names must be portable across Windows/macOS:
+no traversal, absolute paths, hidden segments, reserved device names, or ambiguous
+case/Unicode-normalized duplicate paths. Assets remain subject to converter image
+validation and its existing 25 MiB embedded-resource limit.
+
+The server authenticates imports/source reads and atomically stores copied bundles
+under ignored `output/uploads`, separate from the configured source. Only one
+upload request runs at once. At most 100 batches are retained; normal reset removes
+uploads as well as exports/history. Save wanted copies before reset. No original
+client/source file is modified. Uploaded job records retain source kind across
+restart; their assets are bounded to that batch. Browser uploads need no sourceDir.
+
+Mac/Windows file contents and LF/CRLF input use the same protocol. The service host
+is verified on Windows; native macOS host setup and physical Safari testing remain
+unverified. Browser file/folder selection is subject to browser capabilities.
 
 ## Document title and author
 

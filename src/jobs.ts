@@ -10,9 +10,10 @@ import type { ConversionResult, Format } from './converter.js';
 import { selectedFile } from './library.js';
 import { stopOwnedChild } from './process.js';
 import { submitEmail } from './delivery.js';
+import { UploadStore } from './uploads.js';
 
 export interface Job {
-  id: string; file: string; name: string; format: Format; createdAt: string;
+  id: string; file: string; name: string; format: Format; createdAt: string; source?: 'library' | 'upload';
   state: 'queued' | 'running' | 'cancelling' | 'cancelled' | 'ready' | 'failed' | 'interrupted';
   error?: string; result?: ConversionResult;
   delivery: { state: 'none' | 'submitting' | 'submitted' | 'unknown'; submittedAt?: string; error?: string };
@@ -44,6 +45,7 @@ export class JobQueue {
           !['queued', 'running', 'cancelling', 'cancelled', 'ready', 'failed', 'interrupted'].includes(job.state) ||
           !['none', 'submitting', 'submitted', 'unknown'].includes(job.delivery.state) ||
           path.isAbsolute(job.file) || /^[a-z]:[\\/]/i.test(job.file) || job.file.split(/[\\/]/).includes('..')) continue;
+        if (job.source !== undefined && !['library', 'upload'].includes(job.source)) continue;
         if (job.state === 'ready' && (!job.result || !/^[a-f0-9]{64}$/.test(job.result.sha256) || !Array.isArray(job.result.warnings))) continue;
         if (pending(job)) { job.state = 'interrupted'; job.error = 'Conversion interrupted by service restart. Create a new job to retry.'; }
         if (job.delivery.state === 'submitting') { job.delivery.state = 'unknown'; job.delivery.error = 'Submission interrupted; check your email/Kindle library before retrying.'; }
@@ -68,7 +70,7 @@ export class JobQueue {
   list(): Job[] { return [...this.jobs.values()].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 200); }
   get(id: string): Job { const job = this.jobs.get(id); if (!job) throw new Error('Unknown publication job.'); return job; }
 
-  async create(files: string[], format: Format): Promise<Job[]> {
+  async create(files: string[], format: Format, source: 'library' | 'upload' = 'library'): Promise<Job[]> {
     const previous = this.gate;
     let release!: () => void;
     this.gate = new Promise(resolve => { release = resolve; });
@@ -77,14 +79,16 @@ export class JobQueue {
       if (this.closing) throw new Error('Service is stopping.');
       if (!Array.isArray(files) || files.length < 1 || files.length > 10) throw new Error('Select between 1 and 10 files per batch (limit).');
       if (!['epub', 'pdf'].includes(format)) throw new Error('Choose EPUB or PDF.');
+      if (!['library', 'upload'].includes(source)) throw new Error('Choose the synced library or uploaded documents.');
+      if (source === 'library' && !this.config.sourceDir) throw new Error('Configure a source folder or upload Markdown files.');
       if (this.jobs.size + files.length > 1000) throw new Error('Retained job limit reached. Back up exports and reset generated output.');
       if ([...this.jobs.values()].filter(pending).length + files.length > 20) throw new Error('The queue is full (20 jobs). Wait or cancel a pending job.');
-      const root = await realpath(this.config.sourceDir);
+      const root = await realpath(source === 'upload' ? await new UploadStore(this.repo).root() : this.config.sourceDir);
       const normalized: string[] = [];
       for (const file of files) normalized.push(path.relative(root, await selectedFile(root, file)).replaceAll('\\', '/'));
       const created: Job[] = [];
       for (const file of normalized) {
-        const job: Job = { id: randomUUID(), file, name: path.basename(file), format, createdAt: new Date().toISOString(), state: 'queued', delivery: { state: 'none' } };
+        const job: Job = { id: randomUUID(), file, name: path.basename(file), format, source, createdAt: new Date().toISOString(), state: 'queued', delivery: { state: 'none' } };
         await mkdir(await this.directory(job.id)); await this.persist(job); created.push(job);
       }
       for (const job of created) this.jobs.set(job.id, job);
@@ -107,7 +111,9 @@ export class JobQueue {
       job.state = 'running'; await this.persist(job);
       const directory = await this.directory(job.id);
       const request = path.join(directory, 'input.json');
-      await writeFile(request, JSON.stringify({ sourceRoot: this.config.sourceDir, author: this.config.author, file: job.file, format: job.format, jobDir: directory }));
+      const sourceRoot = job.source === 'upload' ? await new UploadStore(this.repo).batch(job.file.split('/')[0]) : this.config.sourceDir;
+      const sourceFile = job.source === 'upload' ? job.file.split('/').slice(1).join('/') : job.file;
+      await writeFile(request, JSON.stringify({ sourceRoot, author: this.config.author, file: sourceFile, format: job.format, jobDir: directory }));
       if ((job.state as string) === 'cancelling' || this.closing) { job.state = 'cancelled'; await this.persist(job); return; }
       const child = spawn(process.execPath, [fileURLToPath(new URL('./convert-worker.js', import.meta.url)), request], {
         cwd: this.repo, env: process.env, windowsHide: true, detached: process.platform !== 'win32', stdio: ['ignore', 'pipe', 'pipe'],

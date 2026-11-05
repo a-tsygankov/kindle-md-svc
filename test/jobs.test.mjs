@@ -9,6 +9,16 @@ import { getConfig } from '../dist/src/config.js';
 import { JobQueue } from '../dist/src/jobs.js';
 import { smtpCapture } from './helpers/smtp.mjs';
 import { epubPackage } from './helpers/epub.mjs';
+import { UploadStore } from '../dist/src/uploads.js';
+
+test('uploaded documents convert without configuring a synced source folder', async t => {
+  const { repo, queue } = await fixture(t, { sourceDir: '' });
+  const uploaded = await new UploadStore(repo).import([{ path: 'standalone.md', data: Buffer.from('# Uploaded without iCloud').toString('base64') }]);
+  const [job] = await queue.create([uploaded.entries[0].id], 'epub', 'upload');
+  await waitFor(() => ['ready', 'failed'].includes(queue.get(job.id).state));
+  assert.equal(queue.get(job.id).state, 'ready', queue.get(job.id).error);
+  assert.equal(queue.get(job.id).source, 'upload');
+});
 
 async function waitFor(check) {
   for (let i = 0; i < 200; i++) { const value = await check(); if (value) return value; await new Promise(resolve => setTimeout(resolve, 50)); }
