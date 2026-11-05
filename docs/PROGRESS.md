@@ -247,3 +247,9 @@ failures, and next steps. Do not put secrets or private document contents here.
   reverting it to the displayed folder when the latest request fails.
 - After the race fix, the full build/suite passed **45/45**, including the new
   delayed-navigation regression. No test failures or skips remain.
+- Published commit `ee8c641` and created
+  [PR #1](https://github.com/a-tsygankov/kindle-md-svc/pull/1). GitHub reported
+  clean/mergeable with no hosted status checks configured. Reviewer independently
+  repeated the delayed-navigation scenario and confirmed the fix; no remaining
+  critical/important findings. User has authorized merge. The PR page records the
+  authoritative merge result/SHA; synchronize main before the next development task.

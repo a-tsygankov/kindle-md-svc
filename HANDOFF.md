@@ -112,6 +112,11 @@ empty remote. Follow-up LAN, metadata and picker work uses
 current PR/merge status and `git log -1` for the local revision. Local configuration,
 tokens and generated files remain excluded. Do not push unrelated work.
 
+Integration PR: [#1](https://github.com/a-tsygankov/kindle-md-svc/pull/1).
+GitHub reported it clean/mergeable; no hosted CI checks are configured. Full
+local suite passed 45/45. The reviewer independently rechecked the navigation fix
+and found no remaining critical/important issues. Merge is authorized by the user.
+
 Independent pre-merge review found a pending-navigation/sort race. A real browser
 regression reproduced it; the UI now tracks the desired destination separately
 from the displayed directory, preserving navigation across sort/refresh actions.

@@ -66,6 +66,9 @@ disabled because no account/recipient was supplied.
 The initial implementation is published on GitHub `main`; the user authorized
 PR creation/checks/merge for follow-up metadata and picker work. See GitHub for
 the current PR state; the branch is `codex/document-metadata-and-picker`.
+Integration: [PR #1](https://github.com/a-tsygankov/kindle-md-svc/pull/1), clean and
+mergeable at review. No hosted CI configured; 45 local tests passed and independent
+review has no remaining critical/important findings.
 Generated tools, build, output, runtime state and config are ignored. The retained
 recreation scratch copy remains in ignored `tmp/` after the earlier cleanup
 approval rejection. See `git log -1` for the integrated commit.
