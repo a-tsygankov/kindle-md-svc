@@ -112,6 +112,9 @@ acceptance device delivery. Wide/tall diagrams may require zooming.
 PR #1 merged as `9e38c42`; local main was synchronized and passed 45 tests after
 merge. Remembered-browser follow-up is on `codex/remember-browser`; see the latest
 progress entry and GitHub for subsequent integration state.
+Remembered-browser integration: [PR #2](https://github.com/a-tsygankov/kindle-md-svc/pull/2).
+GitHub reported clean/mergeable; 49 local tests pass, independent review resolved,
+and no hosted CI configured. The PR page records final merge state/SHA.
 
 The user authorized PR creation, checks and merge on 2026-11-04. Published the
 existing local main baseline (`f847ac8`, initial source `6d33437`) to the previously

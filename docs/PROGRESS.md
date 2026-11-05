@@ -276,3 +276,7 @@ failures, and next steps. Do not put secrets or private document contents here.
 - Final build and 49/49 tests passed after credential reuse; reviewer verified the
   fix with no remaining critical/important findings. Follow-up uses the same
   PR/check/merge workflow as PR #1. No host paths, tokens or device records enter Git.
+- Published `0545de8` and opened
+  [PR #2](https://github.com/a-tsygankov/kindle-md-svc/pull/2). GitHub reported
+  clean/mergeable with no hosted checks. The PR page records final merge state/SHA;
+  source/config and device credentials remain separate from tracked code.
