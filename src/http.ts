@@ -120,7 +120,10 @@ export async function createPublisher(repo: string) {
         }
         if (req.method === 'GET' && url.pathname === '/api/library') {
           if (!config.sourceDir) throw new HttpError(400, 'Configure a local source folder on the host first.');
-          json(res, 200, await listDirectory(config.sourceDir, url.searchParams.get('directory') || '')); return;
+          json(res, 200, await listDirectory(config.sourceDir, url.searchParams.get('directory') || '', {
+            sort: url.searchParams.get('sort') || 'name', direction: url.searchParams.get('direction') || 'asc',
+            pinnedFirst: url.searchParams.get('pinnedFirst') === 'true',
+          })); return;
         }
         if (url.pathname === '/api/jobs') {
           if (req.method === 'GET') { json(res, 200, { jobs: jobs.list() }); return; }

@@ -1,4 +1,6 @@
 import test from 'node:test';
+import { PDFDocument } from 'pdf-lib';
+import { epubPackage } from './helpers/epub.mjs';
 import assert from 'node:assert/strict';
 import { mkdtemp, mkdir, cp, readFile, writeFile, rm, access } from 'node:fs/promises';
 import os from 'node:os';
@@ -69,3 +71,26 @@ test('repeated image references are bounded before publishing oversized document
   await assert.rejects(convertDocument({ sourceRoot: source, file: 'many.md', jobDir: job, format: 'epub' }), /image.*limit|limit.*image/i);
   await assert.rejects(access(path.join(job, 'artifacts')));
 });
+
+for (const format of ['epub', 'pdf']) {
+  test(`generated ${format} uses filename title and service author over front matter`, async t => {
+    const { source, job } = await fixture(t);
+    const file = 'Café & planning.v2.md';
+    await writeFile(path.join(source, file), '---\ntitle: Wrong title\nauthor: Wrong author\n---\n\n# Notes\nReading material.');
+    await convertDocument({ sourceRoot: source, file, jobDir: job, format, author: 'AT & Team' });
+    const artifact = path.join(job, 'artifacts', `book.${format}`);
+    if (format === 'pdf') {
+      const pdf = await PDFDocument.load(await readFile(artifact));
+      assert.equal(pdf.getTitle(), 'Café & planning.v2');
+      assert.equal(pdf.getAuthor(), 'AT & Team');
+      assert.ok(pdf.getPageCount() > 0);
+    } else {
+      const metadata = epubPackage(await readFile(artifact));
+      assert.match(metadata, /<dc:title[^>]*>Café &amp; planning.v2<\/dc:title>/);
+      assert.match(metadata, /<dc:creator[^>]*>AT &amp; Team<\/dc:creator>/);
+    }
+    const html = await readFile(path.join(job, 'artifacts', 'preview.html'), 'utf8');
+    assert.ok(!html.includes('Wrong title') && !html.includes('Wrong author'));
+    assert.match(html, /Café &amp; planning.v2/);
+  });
+}

@@ -21,6 +21,7 @@
   "dependencies": {
     "@mermaid-js/mermaid-cli": "12.2.0",
     "nodemailer": "10.3.1",
+    "pdf-lib": "1.17.1",
     "puppeteer": "25.16.0"
   },
   "devDependencies": {

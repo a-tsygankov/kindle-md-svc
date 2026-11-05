@@ -33,6 +33,12 @@
         <nav id="breadcrumbs" class="breadcrumbs" aria-label="Folder path"></nav>
         <label class="sr-only" for="filter">Filter filenames in this folder</label>
         <input id="filter" type="search" placeholder="Filter filenames in this folder" autocomplete="off">
+        <div class="sort-controls">
+          <label for="sort-by">Sort by<select id="sort-by"><option value="name">Name</option><option value="modified">Modified date</option><option value="created">Created date</option><option value="size">File size</option></select></label>
+          <label for="sort-direction">Order<select id="sort-direction"><option value="asc">Ascending</option><option value="desc">Descending</option></select></label>
+        </div>
+        <label class="pin-preference"><input id="pinned-first" type="checkbox">Pinned folders first</label>
+        <p class="small">✓ Pinned for offline use is the folder’s storage setting. It does not confirm every nested file has finished syncing. Folders stay above files.</p>
         <div id="file-list" class="file-list" aria-live="polite"></div>
         <div id="selection" class="selection"><span id="selection-count">No files selected</span><button id="clear-selection" class="text-button" hidden>Clear</button></div>
         <p id="selected-names" class="small selected-names"></p>

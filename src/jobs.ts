@@ -107,7 +107,7 @@ export class JobQueue {
       job.state = 'running'; await this.persist(job);
       const directory = await this.directory(job.id);
       const request = path.join(directory, 'input.json');
-      await writeFile(request, JSON.stringify({ sourceRoot: this.config.sourceDir, file: job.file, format: job.format, jobDir: directory }));
+      await writeFile(request, JSON.stringify({ sourceRoot: this.config.sourceDir, author: this.config.author, file: job.file, format: job.format, jobDir: directory }));
       if ((job.state as string) === 'cancelling' || this.closing) { job.state = 'cancelled'; await this.persist(job); return; }
       const child = spawn(process.execPath, [fileURLToPath(new URL('./convert-worker.js', import.meta.url)), request], {
         cwd: this.repo, env: process.env, windowsHide: true, detached: process.platform !== 'win32', stdio: ['ignore', 'pipe', 'pipe'],

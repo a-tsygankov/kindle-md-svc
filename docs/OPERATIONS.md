@@ -9,7 +9,7 @@ location, and local settings stay in ignored `config.local.json`.
 | Command | Behavior |
 | --- | --- |
 | `scripts/setup.ps1` | Provision pinned portable tools, locked packages/browser, build, initialize/preserve config, run doctor |
-| `scripts/configure.ps1` | Update source, listener, tool overrides, and SMTP settings; never accept a password value |
+| `scripts/configure.ps1` | Update source, author, listener, tool overrides, and SMTP settings; never accept a password value |
 | `scripts/start.ps1` | Build and start the service; wait for HTTP readiness |
 | `scripts/start.ps1 -Open` | Start/open the service with token login; reopen it if already running |
 | `scripts/open.ps1` | Open the running service without printing its token |
@@ -55,6 +55,7 @@ permitted by that policy rather than changing machine-wide policy for this app.
 
 ```powershell
 .\scripts\configure.ps1 -SourceDir '<new source folder>'
+.\scripts\configure.ps1 -Author 'AT'
 .\scripts\configure.ps1 -ListenHost 127.0.0.1 -Port 8787
 .\scripts\configure.ps1 -Show
 .\scripts\configure.ps1 -PandocPath '<optional executable path>'
@@ -73,6 +74,45 @@ JSON. Tools otherwise discover local portable executables. The browser cache is
 `.tools/puppeteer`, unless `PUPPETEER_CACHE_DIR` is explicitly overridden. Setup
 provisions the repository cache; provision a separate override cache yourself.
 
+## Document title and author
+
+New EPUBs and PDFs use the selected Markdown filename without its final extension
+as their title: `Project notes.v2.md` becomes `Project notes.v2`. The service
+`author` setting defaults to `AT`. Both values override Markdown front matter
+in the preview/title page and embedded EPUB/PDF metadata.
+
+Change the author with `scripts/configure.ps1 -Author 'Your name'`, or
+`npm run configure -- --author 'Your name'`. Restart after configuration changes.
+Author must contain 1–512 characters without control characters. Existing exports
+keep their metadata; create a new conversion to apply changes. Setup preserves
+saved author configuration; new hosts use `AT`.
+
+## Picker sorting and iCloud storage indicators
+
+Use **Sort by** for name, modified date, created date, or file size, then choose
+ascending/descending. Names use natural numeric ordering. Directories stay above
+files; **Pinned folders first** groups folders with Windows offline pin intent
+before other folders. The selected sort then orders each group. File size does
+not calculate recursive folder sizes. Missing values sort last within a group.
+Folder timestamps describe the folder itself, not its most recently edited child.
+Sort preferences persist in that browser; file selections survive sort changes.
+
+On Windows, the picker reads filesystem attributes without reading document
+contents or changing sync settings. **✓ Pinned for offline use** means Windows
+reports the always-keep-local flag; **↓ Pinned · download pending** means the pin
+is set but recall/offline flags remain. Other labels distinguish on-demand intent,
+download needed, and no explicit offline pin. These are provider metadata at
+refresh time, not proof that every nested file is synced or that uploads completed.
+There is no recursive sync audit or automatic download/pinning action.
+
+To pin a folder, use File Explorer → iCloud Drive → right-click the folder →
+**Always keep on this device**, then Refresh in the picker. See
+[Apple's instructions](https://support.apple.com/en-ie/guide/icloud-windows/icw8531ad6b7/icloud)
+and [Windows attribute meanings](https://learn.microsoft.com/en-us/windows/win32/fileio/file-attribute-constants).
+The Windows metadata helper has an 8-second timeout and returns unknown status on
+failure. Sorting still works. macOS/offline-pin detection is not implemented;
+unsupported platforms show **Storage status unavailable** instead of guessing.
+
 ## Authentication and phone access
 
 The service generates `.state/access-token` on first startup. Only this file
@@ -88,6 +128,10 @@ Default listener: `127.0.0.1:8787`. For a phone on a trusted LAN:
 .\scripts\configure.ps1 -ListenHost 0.0.0.0
 .\scripts\start.ps1
 ```
+
+For a stable bookmark, reserve the laptop's current LAN IP in your router's DHCP
+settings using the Wi-Fi adapter MAC address (`Get-NetAdapter`). Router setup is
+external to this service; a DHCP address can otherwise change.
 
 Browse to the laptop's LAN IP and configured port; enter the private token from
 the host. Use an IP address rather than an arbitrary hostname. Allow Node on the

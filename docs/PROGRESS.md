@@ -172,3 +172,78 @@ failures, and next steps. Do not put secrets or private document contents here.
   the integration, and the fully integrated temporary feature branch is removed.
 - The empty remote has no main ref, so its stale local upstream association is
   cleared until an explicit publish. Local config/token/source remain excluded.
+
+## 2026-11-04 - Phone LAN access
+
+- User requested a phone link, preferably stable. Changed ignored host config
+  from loopback to `0.0.0.0`, then restarted through maintained lifecycle scripts.
+- Health and picker returned HTTP 200 through the active Wi-Fi LAN IP from the
+  laptop. Existing Node inbound allow rules cover Public/Private profiles; no
+  firewall changes were made. Actual phone connectivity remains unverified.
+- Documented router DHCP reservation for stable IP bookmarks. Arbitrary hostnames
+  remain rejected by the existing Host check. No tokens or host IP/MAC values
+  were recorded in tracked docs; no private files converted or emails sent.
+
+## 2026-11-04 - Generated document identity
+
+- User requested filename-based titles and configurable service author, initially
+  `AT`, with maintained scripts. Title now uses the filename without its final
+  extension; both title and author override front matter in preview/EPUB/PDF.
+- Added validated `author` configuration, default/example `AT`, CLI `--author`,
+  PowerShell `-Author`, TypeScript config and background worker propagation.
+  Existing setup preserves config and gains the default through config loading.
+- Added pinned pdf-lib 1.17.1 to set embedded PDF title/author before publication.
+  Chromium still renders the pages. npm install audit: zero vulnerabilities.
+- New tests failed first for missing author default and incorrect EPUB/PDF
+  metadata. Final full build/suite: **41 passed, 0 failed/skipped**. Checks inspect
+  real EPUB package and PDF metadata with Unicode/ampersands; worker integration
+  verifies a custom service author. Tests require no new external Python tools.
+- Applied `AT` with the real PowerShell configure script, preserving source/LAN/
+  SMTP settings. Configure script parsed successfully; git diff check passed.
+  Existing exports retain old metadata; create new conversions after restart.
+- Automatic approval review rejected a combined edit/verification command without
+  a stated reason. Small explicit file patches and separate checks succeeded.
+- Changes remain in the local main working tree; no push, real email submission,
+  or private document conversion performed.
+
+## 2026-11-04 - Picker sorting and Windows iCloud pin indicators
+
+- User requested sorting and identifying folders configured for full local
+  retention. Added natural-name, modified/created timestamp and file-size sorting
+  in either direction. Directories remain first; optional pinned-folders-first
+  precedes the chosen ordering. Missing values sort last; selections persist and
+  browser sort preferences survive reload. Stale listing responses are discarded.
+- Read Windows filesystem pin/unpin/recall flags through a bounded, metadata-only
+  PowerShell adapter. Explicit pinned and pinned/pending icons distinguish offline
+  storage intent from on-demand/download-needed states. Unknown on errors/macOS.
+  No recursive audit, download, pin changes, or upload-completion claim.
+- Actual iCloud root metadata showed three explicitly pinned directories. Only
+  aggregate counts were inspected; no private contents or names recorded here.
+- Tests failed first for missing sorting/status support and absent picker controls.
+  Final build/full suite: **45 passed, 0 failed/skipped**. Real Windows metadata
+  adapter test includes Unicode/punctuation names; phone browser test covers
+  grouping, labels, order, persisted controls, retained selections and no overflow.
+  `output/ui-sorting-mobile.png` was visually inspected. git diff check passed.
+- Documented labels, timestamp/size semantics, provider limits and File Explorer
+  pin workflow. Source remains read-only; no real email or private conversion.
+  Changes stay in the local main working tree, uncommitted/unpushed.
+- Restarted the real service with existing LAN/source/author settings. Authenticated
+  LAN library request using modified-descending/pinned-first returned HTTP 200,
+  all entries had timestamps, and directory status totals were 3 pinned/54 with
+  no explicit pin. LAN health returned 200. No names or token printed by the check.
+
+## 2026-11-04 - Publish, review and PR integration
+
+- User authorized creating a PR, checking and merging. The GitHub repository was
+  empty, so published the existing local main baseline `f847ac8` first; follow-up
+  work is isolated on `codex/document-metadata-and-picker`, targeting main.
+- Pre-publication scan checked all 67 source files against the actual configured
+  source path and token; no matches, no config/runtime/generated roots included.
+  Production dependency audit found zero vulnerabilities; all PowerShell scripts
+  parsed and whitespace checks passed. Initial fresh full suite passed 45/45.
+- Independent read-only review found one important navigation/sort race and no
+  other critical/important findings. A delayed-folder browser regression failed
+  before the fix. Sorting and refreshing now use the desired navigation target,
+  reverting it to the displayed folder when the latest request fails.
+- After the race fix, the full build/suite passed **45/45**, including the new
+  delayed-navigation regression. No test failures or skips remain.

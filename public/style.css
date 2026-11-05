@@ -37,6 +37,11 @@ main, .page-header { max-width: 1170px; margin: auto; padding: 24px; }
 .file-row:has(input:checked) { background: #f1f7f1; }
 .file-name { overflow-wrap: anywhere; min-width: 0; flex: 1; }
 .file-meta { display: block; color: #718176; font-size: 11px; margin-top: 4px; }
+.sort-controls { display: flex; gap: 12px; margin: 12px 0; }
+.sort-controls label { flex: 1; min-width: 0; font-size: 12px; }
+.pin-preference { display: flex; align-items: center; gap: 10px; min-height: 44px; margin-bottom: 6px; }
+.pin-preference input { margin: 0; }
+.offline-pin { color: #23533c; font-weight: 700; }
 .folder-icon { color: #66826c; font-size: 22px; width: 20px; text-align: center; }
 .folder-arrow { margin-left: auto; color: #718176; }
 .selection { display: flex; justify-content: space-between; align-items: center; min-height: 48px; gap: 8px; font-size: 13px; font-weight: 600; }

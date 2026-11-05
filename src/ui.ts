@@ -1,11 +1,34 @@
 import type { Job } from './jobs.js';
 import type { LibraryListing } from './library.js';
+import type { LibraryEntry } from './library.js';
 
 const $ = <T extends HTMLElement = HTMLElement>(id: string) => document.getElementById(id) as T;
 const selected = new Set<string>();
 let listing: LibraryListing = { directory: '', entries: [] };
 let emailAvailable = false, signedIn = false, polling = false;
 let previousJobs = '';
+let directoryRequest = 0;
+let desiredDirectory = '';
+const sortStorageKey = 'kindle-picker-sort-v1';
+try {
+  const saved = JSON.parse(localStorage.getItem(sortStorageKey) || '{}');
+  if (['name', 'modified', 'created', 'size'].includes(saved.sort)) $<HTMLSelectElement>('sort-by').value = saved.sort;
+  if (['asc', 'desc'].includes(saved.direction)) $<HTMLSelectElement>('sort-direction').value = saved.direction;
+  $<HTMLInputElement>('pinned-first').checked = saved.pinnedFirst === true;
+} catch { /* Sorting works even if browser storage is disabled. */ }
+function sortPreferences() {
+  return { sort: $<HTMLSelectElement>('sort-by').value, direction: $<HTMLSelectElement>('sort-direction').value, pinnedFirst: $<HTMLInputElement>('pinned-first').checked };
+}
+function entryMetadata(entry: LibraryEntry): string {
+  const availability = {
+    pinned: '✓ Pinned for offline use', 'pinned-pending': '↓ Pinned · download pending',
+    'on-demand': 'On demand', 'online-only': 'Download needed',
+    local: entry.kind === 'directory' ? 'No offline pin' : 'Available locally', unknown: 'Storage status unavailable',
+  }[entry.availability || 'unknown'];
+  const field = $<HTMLSelectElement>('sort-by').value === 'created' ? 'created' : 'modified';
+  const date = entry[field] ? new Date(entry[field]!) : undefined;
+  return [availability, date && !Number.isNaN(date.getTime()) ? `${field === 'created' ? 'Created' : 'Modified'} ${date.toLocaleString()}` : ''].filter(Boolean).join(' · ');
+}
 
 function element<K extends keyof HTMLElementTagNameMap>(tag: K, text?: string, className?: string): HTMLElementTagNameMap[K] {
   const node = document.createElement(tag); if (text) node.textContent = text; if (className) node.className = className; return node;
@@ -33,24 +56,41 @@ function renderFiles(): void {
   for (const entry of listing.entries.filter(value => value.name.toLocaleLowerCase().includes(filter))) {
     if (entry.kind === 'directory') {
       const button = element('button', undefined, 'folder-row');
-      button.append(element('span', '▱', 'folder-icon'), element('span', entry.name, 'file-name'), element('span', '›', 'folder-arrow'));
+      button.dataset.entryId = entry.id;
+      const pinned = entry.availability === 'pinned';
+      const icon = element('span', pinned ? '✓' : entry.availability === 'pinned-pending' ? '↓' : '▱', 'folder-icon'); icon.setAttribute('aria-hidden', 'true');
+      const text = element('span', entry.name, 'file-name');
+      text.append(element('span', entryMetadata(entry), pinned ? 'file-meta offline-pin' : 'file-meta'));
+      button.append(icon, text, element('span', '›', 'folder-arrow'));
       button.addEventListener('click', () => { void loadDirectory(entry.id).catch(notice); }); container.append(button);
     } else {
       const label = element('label', undefined, 'file-row');
+      label.dataset.entryId = entry.id;
       const input = element('input'); input.type = 'checkbox'; input.dataset.fileId = entry.id; input.checked = selected.has(entry.id);
       input.addEventListener('change', () => {
         if (input.checked && selected.size >= 10) { input.checked = false; notice('Select up to 10 files per conversion batch.'); return; }
         if (input.checked) selected.add(entry.id); else selected.delete(entry.id); updateSelection();
       });
       const text = element('span', entry.name, 'file-name');
-      text.append(element('span', `${Math.max(1, Math.round((entry.bytes || 0) / 1024))} KB · Markdown`, 'file-meta'));
+      text.append(element('span', `${Math.max(1, Math.round((entry.bytes || 0) / 1024))} KB · ${entryMetadata(entry)}`, 'file-meta'));
       label.append(input, text); container.append(label);
     }
   }
   if (!container.children.length) container.append(element('p', filter ? 'No filenames match your filter.' : 'No Markdown files in this folder.', 'empty'));
 }
-async function loadDirectory(directory: string): Promise<void> {
-  listing = await api<LibraryListing>('/api/library?directory=' + encodeURIComponent(directory));
+async function loadDirectory(directory: string, resetFilter = true): Promise<void> {
+  const request = ++directoryRequest;
+  desiredDirectory = directory;
+  const preferences = sortPreferences();
+  const params = new URLSearchParams({ directory, sort: preferences.sort, direction: preferences.direction, pinnedFirst: String(preferences.pinnedFirst) });
+  let result: LibraryListing;
+  try { result = await api<LibraryListing>('/api/library?' + params); }
+  catch (error) {
+    if (request === directoryRequest) desiredDirectory = listing.directory;
+    throw error;
+  }
+  if (request !== directoryRequest || !signedIn) return;
+  listing = result;
   const breadcrumbs = $('breadcrumbs'); breadcrumbs.replaceChildren();
   const home = element('button', 'Library'); home.addEventListener('click', () => { void loadDirectory('').catch(notice); }); breadcrumbs.append(home);
   let current = '';
@@ -59,7 +99,7 @@ async function loadDirectory(directory: string): Promise<void> {
     const button = element('button', part); button.addEventListener('click', () => { void loadDirectory(target).catch(notice); });
     breadcrumbs.append(element('span', '›'), button);
   }
-  $<HTMLInputElement>('filter').value = ''; renderFiles();
+  if (resetFilter) $<HTMLInputElement>('filter').value = ''; renderFiles();
 }
 const states: Record<string, string> = { queued: 'Queued', running: 'Converting', cancelling: 'Cancelling', cancelled: 'Cancelled', ready: 'Ready', failed: 'Failed', interrupted: 'Interrupted' };
 function renderJobs(jobs: Job[]): void {
@@ -122,7 +162,11 @@ async function login(token: string): Promise<void> { await api('/api/session', {
 $('login-form').addEventListener('submit', event => { event.preventDefault(); void login($<HTMLInputElement>('token').value.trim()).catch(notice); });
 $('logout').addEventListener('click', () => { void api('/api/logout', {}).then(() => { selected.clear(); previousJobs = ''; showLogin(); }).catch(notice); });
 $('filter').addEventListener('input', renderFiles);
-$('refresh').addEventListener('click', () => { void loadDirectory(listing.directory).catch(notice); });
+for (const id of ['sort-by', 'sort-direction', 'pinned-first']) $(id).addEventListener('change', () => {
+  try { localStorage.setItem(sortStorageKey, JSON.stringify(sortPreferences())); } catch {}
+  void loadDirectory(desiredDirectory, false).catch(notice);
+});
+$('refresh').addEventListener('click', () => { void loadDirectory(desiredDirectory).catch(notice); });
 $('clear-selection').addEventListener('click', () => { selected.clear(); updateSelection(); renderFiles(); });
 $('publish').addEventListener('click', () => {
   const button = $<HTMLButtonElement>('publish'); button.disabled = true; $('notice').hidden = true;

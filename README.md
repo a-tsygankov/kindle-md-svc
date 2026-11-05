@@ -4,6 +4,15 @@ A local, on-demand Markdown publisher for Kindle Scribe. Browse locally synced
 iCloud Drive or another folder, select documents, render Mermaid diagrams,
 preview, and download EPUB/PDF or submit to a configured Send to Kindle email.
 
+Generated document titles match the Markdown filename without its extension.
+Author defaults to `AT`; change it with `scripts/configure.ps1 -Author 'Your name'`
+and restart. These values override front matter and apply to new conversions.
+
+The picker sorts by name, modified/created date, or file size, with optional
+**Pinned folders first**. Windows iCloud offline pin settings have distinct icons
+and labels. A pin indicates storage intent; it does not verify recursive sync
+completion. Sort preferences are remembered in your browser.
+
 ## Start on Windows
 
 ```powershell
@@ -119,6 +128,6 @@ Project records: [status](docs/STATUS.md), [progress](docs/PROGRESS.md),
 [handoff](HANDOFF.md), [decisions](docs/DECISIONS.md), and
 [conversion experiment findings](docs/conversion-proof.md).
 
-The implementation is integrated on local `main`. No push to GitHub has been
-performed; transfer the committed source or publish it before relying on a new
-remote clone. Local configuration and generated files stay untracked.
+Source is published to the [GitHub repository](https://github.com/a-tsygankov/kindle-md-svc).
+Use `main` for integrated changes and pull requests for follow-ups. Local
+configuration and generated files stay untracked.

@@ -3,6 +3,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createHash } from 'node:crypto';
 import puppeteer from 'puppeteer';
+import { PDFDocument } from 'pdf-lib';
+import { defaults } from '../scripts/host-lib.mjs';
 import type { Browser } from 'puppeteer';
 import { renderMermaid } from '@mermaid-js/mermaid-cli';
 import { contains } from '../scripts/host-lib.mjs';
@@ -14,7 +16,7 @@ export interface ConversionResult {
   format: Format; diagrams: number; images: number; bytes: number;
   sha256: string; sourceSha256: string; warnings: string[];
 }
-interface Options { sourceRoot: string; file: string; jobDir: string; format: Format }
+interface Options { sourceRoot: string; file: string; jobDir: string; format: Format; author?: string }
 type Node = { t: string; c: any };
 const hash = (bytes: Buffer) => createHash('sha256').update(bytes).digest('hex');
 
@@ -62,11 +64,14 @@ export async function convertDocument(options: Options): Promise<ConversionResul
   const ast = JSON.parse(await runTool(pandoc, ['--sandbox', '--from=gfm+yaml_metadata_block+footnotes-raw_html', '--to=json'], original));
   // Only descriptive metadata survives. Drop cover-image, includes, CSS, etc.
   const meta: Record<string, any> = {};
-  for (const key of ['title', 'author', 'date', 'lang', 'description']) {
+  for (const key of ['date', 'lang', 'description']) {
     const text = textMeta(ast.meta[key]).slice(0, 512);
     if (text) meta[key] = { t: 'MetaInlines', c: [{ t: 'Str', c: text }] };
   }
-  meta.title ??= { t: 'MetaInlines', c: [{ t: 'Str', c: path.basename(source, path.extname(source)) }] };
+  const title = path.basename(options.file, path.extname(options.file));
+  const author = options.author ?? defaults.author;
+  meta.author = { t: 'MetaInlines', c: [{ t: 'Str', c: author }] };
+  meta.title = { t: 'MetaInlines', c: [{ t: 'Str', c: title }] };
   meta.lang ??= { t: 'MetaString', c: 'en-US' };
   ast.meta = meta;
   let browser: Browser | undefined;
@@ -151,6 +156,11 @@ export async function convertDocument(options: Options): Promise<ConversionResul
         const broken = await page.evaluate(() => [...document.images].some(image => !image.complete || image.naturalWidth === 0));
         if (broken) throw new Error('A local image could not be decoded.');
         if (options.format === 'pdf') await page.pdf({ path: artifact, preferCSSPageSize: true, printBackground: true, displayHeaderFooter: true, headerTemplate: '<span></span>', footerTemplate: '<div style="width:100%;text-align:center;font:9px Arial"><span class="pageNumber"></span> / <span class="totalPages"></span></div>' });
+        if (options.format === 'pdf') {
+          const pdf = await PDFDocument.load(await readFile(artifact));
+          pdf.setTitle(title); pdf.setAuthor(author);
+          await writeFile(artifact, await pdf.save());
+        }
       } finally { await page.close(); }
     }
     for (const [file, expected] of tracked) {

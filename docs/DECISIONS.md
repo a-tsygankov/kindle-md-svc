@@ -22,3 +22,5 @@
 | 2026-11-04 | Windows hidden independent supervisor | PowerShell 5 captured native output otherwise stayed attached while the background service ran; reproduced in a real regression. |
 | 2026-11-04 | Ordered atomic JSON state updates | Concurrent Windows renames caused EPERM and state-order hazards; serialize per file with bounded transient retries. |
 | 2026-11-04 | Manual generated-job retention | Keep up to 1,000 jobs, show latest 200; explicit backup/reset instead of automatic export deletion. |
+| 2026-11-04 | Service controls document identity | Filename stem is the title; configured author defaults to AT and overrides front matter in preview/EPUB/PDF. Use pinned pdf-lib to set PDF metadata before atomic publication; see [PDFDocument API](https://pdf-lib.js.org/docs/api/classes/pdfdocument). |
+| 2026-11-04 | Report Windows pin intent without claiming sync completion | Batch-read visible-folder filesystem attributes through a bounded PowerShell adapter; no content reads, recursion, or sync changes. Missing/unsupported metadata remains unknown. Server sorts entries; browser remembers preferences. |

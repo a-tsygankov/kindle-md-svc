@@ -1,9 +1,31 @@
 import { open, readdir, realpath, stat } from 'node:fs/promises';
 import path from 'node:path';
 import { contains } from '../scripts/host-lib.mjs';
+import { cloudAvailability, windowsAttributes } from './cloud-status.js';
+import type { Availability } from './cloud-status.js';
 
-export interface LibraryEntry { id: string; name: string; kind: 'directory' | 'document'; bytes?: number; modified?: string }
+export interface LibraryEntry { id: string; name: string; kind: 'directory' | 'document'; bytes?: number; modified?: string; created?: string; availability?: Availability }
 export interface LibraryListing { directory: string; entries: LibraryEntry[] }
+export interface SortOptions { sort?: string; direction?: string; pinnedFirst?: boolean }
+
+export function sortEntries(entries: LibraryEntry[], options: SortOptions = {}): LibraryEntry[] {
+  const collator = new Intl.Collator(undefined, { numeric: true, sensitivity: 'base' });
+  const name = (a: LibraryEntry, b: LibraryEntry) => collator.compare(a.name, b.name) || a.id.localeCompare(b.id);
+  const pinned = (entry: LibraryEntry) => entry.kind === 'directory' && ['pinned', 'pinned-pending'].includes(entry.availability || '');
+  const key = ['modified', 'created', 'size'].includes(options.sort || '') ? options.sort : 'name';
+  const direction = options.direction === 'desc' ? -1 : 1;
+  const value = (entry: LibraryEntry): number | undefined => key === 'size' ? entry.bytes : entry[key as 'modified' | 'created'] ? Date.parse(entry[key as 'modified' | 'created']!) : undefined;
+  return [...entries].sort((a, b) => {
+    const group = Number(b.kind === 'directory') - Number(a.kind === 'directory');
+    if (group) return group;
+    if (options.pinnedFirst && pinned(a) !== pinned(b)) return Number(pinned(b)) - Number(pinned(a));
+    if (key === 'name') return direction * name(a, b);
+    const av = value(a), bv = value(b);
+    const amissing = av === undefined || !Number.isFinite(av), bmissing = bv === undefined || !Number.isFinite(bv);
+    if (amissing !== bmissing) return amissing ? 1 : -1;
+    return (!amissing && !bmissing ? direction * (av! - bv!) : 0) || name(a, b);
+  });
+}
 
 async function inside(root: string, target: string): Promise<string> {
   const canonicalRoot = await realpath(root);
@@ -19,7 +41,7 @@ export async function selectedFile(root: string, id: string): Promise<string> {
   return file;
 }
 
-export async function listDirectory(root: string, directory: string): Promise<LibraryListing> {
+export async function listDirectory(root: string, directory: string, options: SortOptions = {}): Promise<LibraryListing> {
   if (typeof directory !== 'string' || directory.length > 2048 || directory.includes('\0')) throw new Error('Invalid folder.');
   const canonicalRoot = await realpath(root);
   const folder = await inside(canonicalRoot, directory);
@@ -27,18 +49,19 @@ export async function listDirectory(root: string, directory: string): Promise<Li
   const entries: LibraryEntry[] = [];
   const children = await readdir(folder);
   if (children.length > 10_000) throw new Error('This folder is too large; choose a smaller source folder.');
+  const attributes = await windowsAttributes(folder);
   for (const name of children) {
     if (name.startsWith('.')) continue;
     try {
       const file = await inside(canonicalRoot, path.join(folder, name));
       const info = await stat(file);
       const id = path.relative(canonicalRoot, path.join(folder, name)).replaceAll('\\', '/');
-      if (info.isDirectory()) entries.push({ id, name, kind: 'directory' });
-      else if (info.isFile() && /\.(md|markdown)$/i.test(name)) entries.push({ id, name, kind: 'document', bytes: info.size, modified: info.mtime.toISOString() });
+      const metadata = { modified: info.mtime.toISOString(), created: info.birthtime.toISOString(), availability: cloudAvailability(attributes.get(name)) };
+      if (info.isDirectory()) entries.push({ id, name, kind: 'directory', ...metadata });
+      else if (info.isFile() && /\.(md|markdown)$/i.test(name)) entries.push({ id, name, kind: 'document', bytes: info.size, ...metadata });
     } catch { /* Unavailable cloud entries and escaped links are not selectable. */ }
   }
-  entries.sort((a, b) => Number(b.kind === 'directory') - Number(a.kind === 'directory') || a.name.localeCompare(b.name));
-  return { directory: path.relative(canonicalRoot, folder).replaceAll('\\', '/'), entries };
+  return { directory: path.relative(canonicalRoot, folder).replaceAll('\\', '/'), entries: sortEntries(entries, options) };
 }
 
 export async function localAsset(root: string, document: string, target: string): Promise<string> {

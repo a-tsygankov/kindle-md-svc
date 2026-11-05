@@ -1,5 +1,5 @@
 param(
-    [string]$SourceDir, [string]$PandocPath, [string]$BrowserPath,
+    [string]$SourceDir, [string]$Author, [string]$PandocPath, [string]$BrowserPath,
     [string]$ListenHost, [int]$Port,
     [string]$SmtpHost, [int]$SmtpPort, [ValidateSet('tls','starttls','none')][string]$SmtpSecurity,
     [string]$SmtpFrom, [string]$KindleEmail, [string]$SmtpUser, [string]$SmtpPasswordEnv,
@@ -14,7 +14,7 @@ if ($PSBoundParameters.ContainsKey('PandocPath')) { $commandArgs += "--pandoc=$P
 if ($PSBoundParameters.ContainsKey('BrowserPath')) { $commandArgs += "--browser=$BrowserPath" }
 if ($ClearSource) { $commandArgs += '--clear-source' }
 foreach ($mapping in @(
-    @('ListenHost','host'), @('Port','port'), @('SmtpHost','smtp-host'), @('SmtpPort','smtp-port'),
+    @('Author','author'), @('ListenHost','host'), @('Port','port'), @('SmtpHost','smtp-host'), @('SmtpPort','smtp-port'),
     @('SmtpSecurity','smtp-security'), @('SmtpFrom','smtp-from'), @('KindleEmail','kindle-email'),
     @('SmtpUser','smtp-user'), @('SmtpPasswordEnv','smtp-password-env')
 )) {

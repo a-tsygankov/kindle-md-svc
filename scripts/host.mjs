@@ -9,7 +9,7 @@ const execFileAsync = promisify(execFile);
 const { values, positionals } = parseArgs({
   options: {
     repo: { type: 'string' }, source: { type: 'string' }, pandoc: { type: 'string' }, browser: { type: 'string' },
-    out: { type: 'string' },
+    out: { type: 'string' }, author: { type: 'string' },
     file: { type: 'string', multiple: true, default: [] },
     'clear-source': { type: 'boolean' }, 'dry-run': { type: 'boolean' },
     dependencies: { type: 'boolean' }, tools: { type: 'boolean' },
@@ -70,6 +70,7 @@ async function main() {
     }
     case 'configure': {
       const changes = {};
+      if (values.author !== undefined) changes.author = values.author;
       if (values.source !== undefined) changes.sourceDir = values.source;
       if (values['clear-source']) changes.sourceDir = '';
       if (values.pandoc !== undefined) changes.pandocPath = values.pandoc;
