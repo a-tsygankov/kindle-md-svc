@@ -291,3 +291,15 @@ test('concurrent atomic state updates remain valid JSON and preserve call order'
   await Promise.all(Array.from({ length: 60 }, (_, sequence) => writeJson(file, { sequence })));
   assert.equal(JSON.parse(await readFile(file, 'utf8')).sequence, 59);
 });
+
+test('service author defaults, config validation, and CLI configuration round trip', async t => {
+  const { repo } = await fixture(t);
+  assert.equal((await loadConfig(repo)).author, 'AT');
+  const exec = promisify(execFile);
+  await exec(process.execPath, [path.resolve('scripts/host.mjs'), 'configure', '--repo', repo, '--author', 'AT & Team']);
+  assert.equal((await loadConfig(repo)).author, 'AT & Team');
+  for (const author of ['', ' ', 'bad\nname', 'x'.repeat(513), 3]) {
+    await assert.rejects(configure(repo, { author }), /author/i);
+  }
+  assert.equal((await loadConfig(repo)).author, 'AT & Team');
+});

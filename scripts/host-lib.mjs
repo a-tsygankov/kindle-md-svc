@@ -14,7 +14,7 @@ export function isAlive(pid) {
 }
 
 export const smtpDefaults = Object.freeze({ enabled: false, host: '', port: 587, security: 'starttls', from: '', to: '', user: '', passwordEnv: 'KINDLE_SMTP_PASSWORD', maxAttachmentBytes: 20 * 1024 * 1024 });
-export const defaults = Object.freeze({ schemaVersion: 1, sourceDir: '', pandocPath: '', browserPath: '', listenHost: '127.0.0.1', port: 8787, smtp: smtpDefaults });
+export const defaults = Object.freeze({ schemaVersion: 1, sourceDir: '', author: 'AT', pandocPath: '', browserPath: '', listenHost: '127.0.0.1', port: 8787, smtp: smtpDefaults });
 
 function validateConfig(config) {
   for (const key of Object.keys(config)) if (!Object.hasOwn(defaults, key)) throw new Error(`Unknown config field: ${key}`);
@@ -22,6 +22,8 @@ function validateConfig(config) {
   for (const key of ['sourceDir', 'pandocPath', 'browserPath', 'listenHost']) {
     if (typeof result[key] !== 'string' || result[key].includes('\0')) throw new Error(`Config ${key} must be a string without a null character.`);
   }
+  if (typeof result.author !== 'string' || !result.author.trim() || result.author.length > 512 || /[\x00-\x1f\x7f]/.test(result.author)) throw new Error('Config author must be 1 to 512 characters without control characters.');
+  result.author = result.author.trim();
   if (result.listenHost !== 'localhost' && !isIP(result.listenHost)) throw new Error('listenHost must be localhost or an IP address.');
   if (!Number.isInteger(result.port) || result.port < 0 || result.port > 65535) throw new Error('port must be between 0 and 65535.');
   if (!result.smtp || typeof result.smtp !== 'object' || Array.isArray(result.smtp)) throw new Error('smtp must be an object.');

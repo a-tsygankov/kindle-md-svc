@@ -39,9 +39,10 @@ PowerShell 5 otherwise kept captured output handles attached to the service.
 
 Default listener is localhost port 8787. Token is in ignored `.state/access-token`;
 browser sessions are HttpOnly/SameSite. LAN binding requires explicit config and
-trusted-network use; no firewall changes or public hosting were performed.
-At the end of this session the host service was left running on the default
-loopback address; health was 200 and anonymous library requests were 401. Check
+trusted-network use. Phone-access setup now binds this host to `0.0.0.0:8787`
+in ignored local configuration. No firewall changes or public hosting were performed.
+Existing Node firewall allow rules were found. LAN-IP health and picker returned
+200 from this laptop; access from the phone remains to be checked. Check
 live status before build/tests/reset; stop the service first for those operations.
 SMTP is disabled; no real recipient/credentials were supplied. Configure through
 script/ignored JSON; password values come only from a named environment variable.
@@ -69,7 +70,18 @@ canonically and source overlap is refused before writes/deletion.
 
 ## Verification on 2026-11-04
 
-- TypeScript build and **38/38 full tests passed**.
+- Latest TypeScript build and **45/45 full tests passed** after picker changes.
+- Picker supports natural name, modified/created date, file-size sorting and
+  pinned-folders-first; preferences persist per browser. Windows metadata adapter
+  (`scripts/cloud-attributes.ps1`, `src/cloud-status.ts`) reads pin/recall flags
+  without contents/recursion/mutations. Pin intent never claims recursive sync
+  completion. macOS/provider failure reports unknown. Phone screenshot inspected.
+- New exports use the Markdown filename stem as title and service `author` as
+  author (default/current host: `AT`), overriding front matter. PowerShell
+  `configure.ps1 -Author` and CLI `configure --author` update this setting;
+  restart before new conversions. Existing exports are unchanged.
+- EPUB package metadata, PDF title/author (including Unicode/ampersands), custom
+  author propagation into the conversion worker, and invalid config are tested.
 - Final npm audit reported zero vulnerabilities, all PowerShell scripts parsed,
   and two current documentation Mermaid diagrams rendered successfully.
 - Original proof and host tests retained. Real Pandoc/Chromium service conversion,
@@ -93,12 +105,21 @@ acceptance device delivery. Wide/tall diagrams may require zooming.
 
 ## Source state and retained scratch
 
-The user requested repository integration. Local `main` is initialized from the
-verified initial implementation commit `6d33437`; no separate merge commit is
-needed for an empty repository. All 38 tests passed again on local main. Nothing
-was pushed. Use `git log -1` for the latest documentation/integration commit.
-Do not push without authorization. The empty remote does not yet reproduce the
-implementation; transfer local committed source or publish it first.
+The user authorized PR creation, checks and merge on 2026-11-04. Published the
+existing local main baseline (`f847ac8`, initial source `6d33437`) to the previously
+empty remote. Follow-up LAN, metadata and picker work uses
+`codex/document-metadata-and-picker` and a PR into main. Check GitHub for the
+current PR/merge status and `git log -1` for the local revision. Local configuration,
+tokens and generated files remain excluded. Do not push unrelated work.
+
+Integration PR: [#1](https://github.com/a-tsygankov/kindle-md-svc/pull/1).
+GitHub reported it clean/mergeable; no hosted CI checks are configured. Full
+local suite passed 45/45. The reviewer independently rechecked the navigation fix
+and found no remaining critical/important issues. Merge is authorized by the user.
+
+Independent pre-merge review found a pending-navigation/sort race. A real browser
+regression reproduced it; the UI now tracks the desired destination separately
+from the displayed directory, preserving navigation across sort/refresh actions.
 
 Earlier automatic approval review blocked cleanup of the disposable recreation
 copy without a specific reason. It remains under ignored `tmp/`, with its location

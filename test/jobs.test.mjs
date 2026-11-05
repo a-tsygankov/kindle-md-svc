@@ -8,6 +8,7 @@ import { configure } from '../scripts/host-lib.mjs';
 import { getConfig } from '../dist/src/config.js';
 import { JobQueue } from '../dist/src/jobs.js';
 import { smtpCapture } from './helpers/smtp.mjs';
+import { epubPackage } from './helpers/epub.mjs';
 
 async function waitFor(check) {
   for (let i = 0; i < 200; i++) { const value = await check(); if (value) return value; await new Promise(resolve => setTimeout(resolve, 50)); }
@@ -24,7 +25,7 @@ async function fixture(t, settings = {}) {
 }
 
 test('jobs publish ready artifacts, isolate duplicate basenames, and recover interrupted jobs', async t => {
-  const { repo, source, queue } = await fixture(t);
+  const { repo, source, queue } = await fixture(t, { author: 'Configured Service Author' });
   await mkdir(path.join(source, 'a')); await mkdir(path.join(source, 'b'));
   await writeFile(path.join(source, 'a', 'notes.md'), '# First');
   await writeFile(path.join(source, 'b', 'notes.md'), '# Second');
@@ -34,7 +35,9 @@ test('jobs publish ready artifacts, isolate duplicate basenames, and recover int
   await waitFor(() => jobs.every(job => queue.get(job.id).state === 'ready'));
   for (const job of jobs) {
     const file = await queue.artifact(job.id, 'download');
-    assert.equal((await readFile(file)).subarray(0, 2).toString(), 'PK');
+    const metadata = epubPackage(await readFile(file));
+    assert.match(metadata, /<dc:title[^>]*>notes<\/dc:title>/);
+    assert.match(metadata, /<dc:creator[^>]*>Configured Service Author<\/dc:creator>/);
   }
   const id = randomUUID(), folder = path.join(repo, 'output', 'jobs', id);
   await mkdir(folder);

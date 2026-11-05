@@ -1,6 +1,7 @@
 {
   "schemaVersion": 1,
   "sourceDir": "",
+  "author": "AT",
   "pandocPath": "",
   "browserPath": "",
   "listenHost": "127.0.0.1",
